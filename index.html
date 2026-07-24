@@ -64,14 +64,14 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto">
                     <div class="border rounded p-2 text-center bg-gray-50 flex flex-col">
                         <span class="block text-sm font-semibold mb-2">Foto Antes</span>
-                        <div class="flex-1 flex items-center justify-center bg-gray-200 rounded overflow-hidden min-h-[200px]">
-                            <img id="imgAntes" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto Antes" class="object-cover max-w-full max-h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">
+                        <div id="contenedorAntes" class="flex-1 flex items-center justify-center bg-gray-200 rounded overflow-hidden min-h-[200px] relative">
+                            <img id="imgAntes" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto Antes" class="object-cover w-full h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">
                         </div>
                     </div>
                     <div class="border rounded p-2 text-center bg-gray-50 flex flex-col">
                         <span class="block text-sm font-semibold mb-2">Foto Después</span>
-                        <div class="flex-1 flex items-center justify-center bg-gray-200 rounded overflow-hidden min-h-[200px]">
-                            <img id="imgDespues" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto Después" class="object-cover max-w-full max-h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">
+                        <div id="contenedorDespues" class="flex-1 flex items-center justify-center bg-gray-200 rounded overflow-hidden min-h-[200px] relative">
+                            <img id="imgDespues" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto Después" class="object-cover w-full h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">
                         </div>
                     </div>
                 </div>
@@ -155,21 +155,28 @@
         const modal = document.getElementById('imageModal');
         const modalImg = document.getElementById('modalImage');
 
-        // Función para transformar URL de vista de Drive a URL directa de imagen
-        function getDirectImageUrl(driveUrl) {
-            if (!driveUrl) return 'https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto';
-            
-            // Expresión regular para encontrar el ID del archivo
-            const idMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            
-            if (idMatch && idMatch[1]) {
-                const fileId = idMatch[1];
-                // Google bloqueó el formato uc?export=view. 
-                // El método actual 100% funcional es usar el endpoint thumbnail con un tamaño (sz=w1000)
-                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+        // Función para extraer el ID de Google Drive de cualquier formato de URL
+        function extraerDriveId(url) {
+            if (!url) return null;
+            // Busca la secuencia de texto única de Google Drive (aprox 25 a 33 caracteres)
+            const match = url.match(/[-\w]{25,}/);
+            return match ? match[0] : null;
+        }
+
+        // Función "Plan B": Si el navegador bloquea la imagen por seguridad, inyectamos un iframe de vista previa
+        function fallbackIframe(imgElement, originalUrl) {
+            const id = extraerDriveId(originalUrl);
+            if (id) {
+                const parent = imgElement.parentElement;
+                // Sustituimos la etiqueta img por un iframe de Drive
+                parent.innerHTML = `<iframe src="https://drive.google.com/file/d/${id}/preview" class="w-full h-full min-h-[200px] border-0 rounded"></iframe>
+                                    <a href="${originalUrl}" target="_blank" class="absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded shadow-md flex items-center gap-1 z-10 transition-colors" title="Abrir en pestaña nueva">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                        Abrir
+                                    </a>`;
+            } else {
+                imgElement.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=Error+en+enlace';
             }
-            
-            return driveUrl; 
         }
 
         // Función principal para cargar datos
@@ -264,17 +271,48 @@
             document.getElementById('detNivelAntes').textContent = dato.NIVEL_ANTES || '0';
             document.getElementById('detNivelDespues').textContent = dato.NIVEL_DESPUES || '0';
 
-            // Manejar fotos (Transformar enlace Drive si es necesario)
-            document.getElementById('imgAntes').src = getDirectImageUrl(dato.FOTO_ANTES);
-            document.getElementById('imgDespues').src = getDirectImageUrl(dato.FOTO_DESPUES);
+            // 1. Restauramos el estado original del contenedor (por si en la ficha anterior se usó un iframe)
+            const contenedorAntes = document.getElementById('contenedorAntes');
+            const contenedorDespues = document.getElementById('contenedorDespues');
+            
+            contenedorAntes.innerHTML = `<img id="imgAntes" src="https://placehold.co/400x300/e2e8f0/64748b?text=Cargando..." alt="Foto Antes" class="object-cover w-full h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">`;
+            contenedorDespues.innerHTML = `<img id="imgDespues" src="https://placehold.co/400x300/e2e8f0/64748b?text=Cargando..." alt="Foto Después" class="object-cover w-full h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">`;
+
+            const imgAntes = document.getElementById('imgAntes');
+            const imgDespues = document.getElementById('imgDespues');
+            
+            // 2. Extraemos IDs
+            const idAntes = extraerDriveId(dato.FOTO_ANTES);
+            const idDespues = extraerDriveId(dato.FOTO_DESPUES);
+
+            // 3. Asignamos imágenes o ejecutamos fallback (Plan B) si hay error
+            if (idAntes) {
+                imgAntes.src = `https://drive.google.com/thumbnail?id=${idAntes}&sz=w1000`;
+                // Si la imagen falla al cargar (error 403 de Google), activar plan B
+                imgAntes.onerror = () => fallbackIframe(imgAntes, dato.FOTO_ANTES);
+            } else {
+                imgAntes.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto';
+            }
+
+            if (idDespues) {
+                imgDespues.src = `https://drive.google.com/thumbnail?id=${idDespues}&sz=w1000`;
+                // Si la imagen falla al cargar (error 403 de Google), activar plan B
+                imgDespues.onerror = () => fallbackIframe(imgDespues, dato.FOTO_DESPUES);
+            } else {
+                imgDespues.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto';
+            }
         }
 
         function limpiarFicha() {
              document.getElementById('detFid').textContent = '-';
              document.getElementById('detFecha').textContent = '-';
-             // ... limpiar demás campos
-             document.getElementById('imgAntes').src = getDirectImageUrl('');
-             document.getElementById('imgDespues').src = getDirectImageUrl('');
+             document.getElementById('detHora').textContent = '-';
+             document.getElementById('detObs').textContent = '';
+             document.getElementById('detNivelAntes').textContent = '-';
+             document.getElementById('detNivelDespues').textContent = '-';
+             
+             document.getElementById('contenedorAntes').innerHTML = `<img id="imgAntes" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto" class="object-cover w-full h-full">`;
+             document.getElementById('contenedorDespues').innerHTML = `<img id="imgDespues" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto" class="object-cover w-full h-full">`;
         }
 
         function renderizarTabla() {
