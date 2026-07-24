@@ -159,17 +159,16 @@
         function getDirectImageUrl(driveUrl) {
             if (!driveUrl) return 'https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto';
             
-            // Expresión regular para encontrar el ID del archivo en el enlace típico de Drive
-            // Busca '/d/' seguido de cualquier caracter que no sea '/' hasta el siguiente '/' o fin de string
+            // Expresión regular para encontrar el ID del archivo
             const idMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
             
             if (idMatch && idMatch[1]) {
-                // Si encuentra el ID, construye la URL directa
                 const fileId = idMatch[1];
-                return `https://drive.google.com/uc?export=view&id=${fileId}`;
+                // Google bloqueó el formato uc?export=view. 
+                // El método actual 100% funcional es usar el endpoint thumbnail con un tamaño (sz=w1000)
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
             
-            // Si el enlace ya es un 'uc?id=' u otro formato válido, o no se reconoce, lo devuelve tal cual
             return driveUrl; 
         }
 
