@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Inspección de Pozo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para el gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Estilos personalizados adicionales si son necesarios, Tailwind cubre la mayoría */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* gris claro de Tailwind bg-gray-100 */
+        }
+        /* Para que la tabla se vea bien en contenedor con scroll */
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f9fafb; /* bg-gray-50 */
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 h-screen flex flex-col">
+
+    <header class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 text-center">Dashboard de Inspección - Pozo de Aguas Servidas</h1>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
+        
+        <!-- COLUMNA IZQUIERDA: Selector y Ficha -->
+        <section class="flex flex-col gap-4 min-h-0">
+            
+            <!-- Selector de Ficha -->
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <label for="fichaSelector" class="block text-sm font-medium text-gray-700 mb-2">Seleccione una Inspección (FID):</label>
+                <select id="fichaSelector" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border">
+                    <option value="">Cargando datos...</option>
+                </select>
+            </div>
+
+            <!-- Ficha de Inspección Detallada -->
+            <div id="fichaDetalle" class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col overflow-y-auto hidden">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Detalles de la Inspección</h2>
+                
+                <!-- Datos de inspección -->
+                <div class="bg-blue-50 p-4 rounded-md mb-4 grid grid-cols-2 gap-4">
+                    <div><span class="font-semibold text-gray-600">FID:</span> <span id="detFid" class="text-gray-900"></span></div>
+                    <div><span class="font-semibold text-gray-600">Fecha:</span> <span id="detFecha" class="text-gray-900"></span></div>
+                    <div><span class="font-semibold text-gray-600">Hora:</span> <span id="detHora" class="text-gray-900"></span></div>
+                    <div class="col-span-2"><span class="font-semibold text-gray-600">Observación:</span> <span id="detObs" class="text-gray-900 block mt-1 bg-white p-2 rounded border text-sm"></span></div>
+                    <div><span class="font-semibold text-gray-600">Nivel Antes:</span> <span id="detNivelAntes" class="text-red-600 font-bold"></span> m</div>
+                    <div><span class="font-semibold text-gray-600">Nivel Después:</span> <span id="detNivelDespues" class="text-green-600 font-bold"></span> m</div>
+                </div>
+
+                <!-- Fotos -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto">
+                    <div class="border rounded p-2 text-center bg-gray-50 flex flex-col">
+                        <span class="block text-sm font-semibold mb-2">Foto Antes</span>
+                        <div class="flex-1 flex items-center justify-center bg-gray-200 rounded overflow-hidden min-h-[200px]">
+                            <img id="imgAntes" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto Antes" class="object-cover max-w-full max-h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">
+                        </div>
+                    </div>
+                    <div class="border rounded p-2 text-center bg-gray-50 flex flex-col">
+                        <span class="block text-sm font-semibold mb-2">Foto Después</span>
+                        <div class="flex-1 flex items-center justify-center bg-gray-200 rounded overflow-hidden min-h-[200px]">
+                            <img id="imgDespues" src="https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto" alt="Foto Después" class="object-cover max-w-full max-h-full cursor-pointer hover:opacity-90 transition-opacity" onclick="abrirImagen(this.src)">
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-2 text-center">Haz clic en la imagen para verla en grande</p>
+            </div>
+            
+            <!-- Mensaje de estado -->
+            <div id="loadingMessage" class="bg-white p-8 rounded-lg shadow border border-gray-200 flex-1 flex items-center justify-center text-gray-500">
+                <div class="text-center">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p>Obteniendo datos de Google Sheets...</p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- COLUMNA DERECHA: Tabla y Gráfico -->
+        <section class="flex flex-col gap-4 min-h-0">
+            
+            <!-- Tabla con todos los datos -->
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col flex-1 min-h-[300px]">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">Registro Histórico</h2>
+                <div class="table-container flex-1 border rounded-md">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">FID</th>
+                                <th scope="col" class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Fecha / Hora</th>
+                                <th scope="col" class="px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">N. Antes</th>
+                                <th scope="col" class="px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">N. Después</th>
+                                <th scope="col" class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaDatos" class="bg-white divide-y divide-gray-200">
+                            <!-- Filas dinámicas aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Gráfico de líneas -->
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-[0.8] min-h-[250px] flex flex-col">
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Evolución de Niveles</h2>
+                <div class="relative flex-1 w-full h-full">
+                    <canvas id="graficoNiveles"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal para ver imagen en grande -->
+    <div id="imageModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-80 flex items-center justify-center p-4" onclick="cerrarImagen()">
+        <img id="modalImage" src="" alt="Imagen Ampliada" class="max-w-full max-h-full object-contain bg-white p-1 rounded">
+        <button class="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 focus:outline-none">&times;</button>
+    </div>
+
+    <script>
+        // ID de tu documento de Google Sheets (Extraído de tu URL)
+        const SHEET_ID = '17AdORP1p500PO9WOir7BmptH424-NKF3oiHA9z13VoM';
+        // Nombre de la hoja (pestaña). Si no especificas, toma la primera. 
+        // Asumo que se llama "Hoja 1" o similar, si falla, usaremos gid=0
+        
+        // URL para la API de visualización de Google (Formato JSON)
+        // Usamos la query 'SELECT *' para traer todo
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+        let globalData = [];
+        let miGrafico = null;
+
+        // Elementos del DOM
+        const selector = document.getElementById('fichaSelector');
+        const loadingMsg = document.getElementById('loadingMessage');
+        const fichaDetalle = document.getElementById('fichaDetalle');
+        const tablaBody = document.getElementById('tablaDatos');
+        
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+
+        // Función para transformar URL de vista de Drive a URL directa de imagen
+        function getDirectImageUrl(driveUrl) {
+            if (!driveUrl) return 'https://placehold.co/400x300/e2e8f0/64748b?text=Sin+Foto';
+            
+            // Expresión regular para encontrar el ID del archivo en el enlace típico de Drive
+            // Busca '/d/' seguido de cualquier caracter que no sea '/' hasta el siguiente '/' o fin de string
+            const idMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            
+            if (idMatch && idMatch[1]) {
+                // Si encuentra el ID, construye la URL directa
+                const fileId = idMatch[1];
+                return `https://drive.google.com/uc?export=view&id=${fileId}`;
+            }
+            
+            // Si el enlace ya es un 'uc?id=' u otro formato válido, o no se reconoce, lo devuelve tal cual
+            return driveUrl; 
+        }
+
+        // Función principal para cargar datos
+        async function cargarDatos() {
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                // Google Sheets devuelve una cadena con un callback 'google.visualization.Query.setResponse(...)'
+                // Necesitamos extraer solo el JSON usando Regex o substrings
+                const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+                const data = JSON.parse(jsonString);
+
+                procesarDatos(data.table);
+                
+                loadingMsg.classList.add('hidden');
+                fichaDetalle.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error al cargar los datos:", error);
+                loadingMsg.innerHTML = `<div class="text-red-500 font-bold"><p>Error al cargar los datos de Sheets.</p><p class="text-sm font-normal">Asegúrate de que el documento esté publicado en la web o configurado como "Cualquier persona con el enlace".</p></div>`;
+            }
+        }
+
+        function procesarDatos(table) {
+            // Obtener nombres de columnas
+            const cols = table.cols.map(c => c.label || c.id);
+            
+            // Mapear filas a objetos más fáciles de manejar
+            globalData = table.rows.map(row => {
+                let obj = {};
+                row.c.forEach((cell, i) => {
+                    // Mapeo seguro, si la celda es null, asignar string vacío
+                    let val = cell ? (cell.f || cell.v) : ''; 
+                    
+                    // Asegurar nombres de columnas esperados (basado en tu prompt)
+                    const colName = cols[i] ? cols[i].toUpperCase().trim() : `COL_${i}`;
+                    obj[colName] = val;
+                });
+                return obj;
+            });
+
+            // Ordenar por FID descendente (más reciente primero, asumiendo que FID crece)
+            // Si quieres ordenar por fecha, habría que parsear la fecha
+            globalData.sort((a, b) => {
+                const numA = parseFloat(a.FID) || 0;
+                const numB = parseFloat(b.FID) || 0;
+                return numB - numA; 
+            });
+
+            poblarSelector();
+            renderizarTabla();
+            renderizarGrafico();
+
+            // Mostrar la primera ficha por defecto si hay datos
+            if(globalData.length > 0) {
+                selector.value = globalData[0].FID;
+                mostrarFicha(globalData[0].FID);
+            }
+        }
+
+        function poblarSelector() {
+            selector.innerHTML = '<option value="">-- Seleccione FID --</option>';
+            globalData.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.FID;
+                // Combinar Fecha y FID para mejor lectura
+                option.text = `FID: ${item.FID} - ${item.FECHA || 'Sin fecha'}`;
+                selector.appendChild(option);
+            });
+
+            selector.addEventListener('change', (e) => {
+                if(e.target.value) {
+                    mostrarFicha(e.target.value);
+                } else {
+                    // Limpiar ficha si selecciona la opcion por defecto
+                    limpiarFicha();
+                }
+            });
+        }
+
+        function mostrarFicha(fid) {
+            const dato = globalData.find(d => d.FID == fid);
+            if(!dato) return;
+
+            document.getElementById('detFid').textContent = dato.FID || '-';
+            document.getElementById('detFecha').textContent = dato.FECHA || '-';
+            document.getElementById('detHora').textContent = dato.HORA || '-';
+            document.getElementById('detObs').textContent = dato.OBSERVACION || 'Sin observaciones.';
+            
+            // Colorear niveles
+            document.getElementById('detNivelAntes').textContent = dato.NIVEL_ANTES || '0';
+            document.getElementById('detNivelDespues').textContent = dato.NIVEL_DESPUES || '0';
+
+            // Manejar fotos (Transformar enlace Drive si es necesario)
+            document.getElementById('imgAntes').src = getDirectImageUrl(dato.FOTO_ANTES);
+            document.getElementById('imgDespues').src = getDirectImageUrl(dato.FOTO_DESPUES);
+        }
+
+        function limpiarFicha() {
+             document.getElementById('detFid').textContent = '-';
+             document.getElementById('detFecha').textContent = '-';
+             // ... limpiar demás campos
+             document.getElementById('imgAntes').src = getDirectImageUrl('');
+             document.getElementById('imgDespues').src = getDirectImageUrl('');
+        }
+
+        function renderizarTabla() {
+            tablaBody.innerHTML = '';
+            globalData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-100 transition-colors";
+                
+                tr.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-900 font-medium">${item.FID || '-'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-600">
+                        <div class="text-sm font-semibold">${item.FECHA || '-'}</div>
+                        <div class="text-xs text-gray-500">${item.HORA || '-'}</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            ${item.NIVEL_ANTES || '-'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                         <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            ${item.NIVEL_DESPUES || '-'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <button onclick="seleccionarDesdeTabla('${item.FID}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded border border-blue-200">Ver Ficha</button>
+                    </td>
+                `;
+                tablaBody.appendChild(tr);
+            });
+        }
+
+        function seleccionarDesdeTabla(fid) {
+            selector.value = fid;
+            mostrarFicha(fid);
+            // Hacer scroll suave hacia arriba en móviles para ver la ficha
+            if (window.innerWidth < 1024) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function renderizarGrafico() {
+            const ctx = document.getElementById('graficoNiveles').getContext('2d');
+            
+            // Preparar datos para el gráfico (invertir para que vaya de más antiguo a más reciente de izq a der)
+            const datosGrafico = [...globalData].reverse();
+
+            const labels = datosGrafico.map(d => `${d.FECHA} ${d.HORA}`);
+            const dataAntes = datosGrafico.map(d => parseFloat(d.NIVEL_ANTES) || 0);
+            const dataDespues = datosGrafico.map(d => parseFloat(d.NIVEL_DESPUES) || 0);
+
+            if (miGrafico) {
+                miGrafico.destroy();
+            }
+
+            miGrafico = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Nivel Antes (m)',
+                            data: dataAntes,
+                            borderColor: 'rgb(239, 68, 68)', // Rojo tailwind
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: 'rgb(239, 68, 68)'
+                        },
+                        {
+                            label: 'Nivel Después (m)',
+                            data: dataDespues,
+                            borderColor: 'rgb(34, 197, 94)', // Verde tailwind
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: 'rgb(34, 197, 94)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 6
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    // Buscar el FID correspondiente para mostrarlo en el tooltip
+                                    const index = context[0].dataIndex;
+                                    const fid = datosGrafico[index].FID;
+                                    return `FID: ${fid} | ${context[0].label}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Nivel (metros)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Lógica Modal Imagen
+        function abrirImagen(src) {
+            // No abrir si es el placeholder
+            if(src.includes('placehold.co')) return;
+            
+            modalImg.src = src;
+            modal.classList.remove('hidden');
+        }
+
+        function cerrarImagen() {
+            modal.classList.add('hidden');
+            modalImg.src = '';
+        }
+
+        // Iniciar carga al cargar la ventana
+        window.onload = cargarDatos;
+
+    </script>
+</body>
+</html>
