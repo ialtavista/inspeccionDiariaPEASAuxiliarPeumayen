@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js para el gráfico -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF y AutoTable para reportes PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         /* Estilos personalizados adicionales si son necesarios, Tailwind cubre la mayoría */
         body {
@@ -29,8 +32,22 @@
 </head>
 <body class="p-4 md:p-8 h-screen flex flex-col">
 
-    <header class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-800 text-center">Dashboard de Inspección - Pozo de Aguas Servidas</h1>
+    <!-- Overlay de Carga de PDF -->
+    <div id="pdfOverlay" class="fixed inset-0 z-[100] hidden bg-gray-900 bg-opacity-80 flex-col items-center justify-center p-4">
+        <svg class="animate-spin h-16 w-16 text-blue-500 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <h2 id="pdfOverlayText" class="text-white text-2xl font-bold text-center mb-2">Generando PDF...</h2>
+        <p class="text-gray-300 mt-2 text-base text-center max-w-md">Descargando imágenes y construyendo reporte.<br>Esto puede tardar unos segundos, por favor no cierres la ventana.</p>
+    </div>
+
+    <header class="mb-6 flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow border border-gray-200">
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 text-center md:text-left mb-4 md:mb-0">Dashboard de Inspección - PEAS Peumayén</h1>
+        <button onclick="descargarReporte()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow flex items-center gap-2 transition-colors focus:ring-4 focus:ring-blue-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Descargar Reporte Completo
+        </button>
     </header>
 
     <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
@@ -338,7 +355,10 @@
                         </span>
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                        <button onclick="seleccionarDesdeTabla('${item.FID}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded border border-blue-200">Ver Ficha</button>
+                        <button onclick="descargarFichaPDF('${item.FID}')" class="text-green-700 hover:text-green-900 bg-green-50 px-3 py-1 rounded border border-green-300 flex items-center justify-center gap-1 transition-colors w-full sm:w-auto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Descargar
+                        </button>
                     </td>
                 `;
                 tablaBody.appendChild(tr);
@@ -353,6 +373,19 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
+
+        // Plugin para forzar fondo blanco en el canvas (necesario para la exportación a PDF para que no quede fondo negro)
+        const customCanvasBackgroundColor = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart, args, options) => {
+                const {ctx} = chart;
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = options.color || '#ffffff';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
 
         function renderizarGrafico() {
             const ctx = document.getElementById('graficoNiveles').getContext('2d');
@@ -436,7 +469,8 @@
                             }
                         }
                     }
-                }
+                },
+                plugins: [customCanvasBackgroundColor]
             });
         }
 
@@ -452,6 +486,286 @@
         function cerrarImagen() {
             modal.classList.add('hidden');
             modalImg.src = '';
+        }
+
+        // --- LÓGICA DE GENERACIÓN DE PDF ---
+        
+        function mostrarCargandoPDF(texto) {
+            document.getElementById('pdfOverlayText').textContent = texto;
+            document.getElementById('pdfOverlay').classList.remove('hidden');
+            document.getElementById('pdfOverlay').classList.add('flex');
+        }
+
+        function ocultarCargandoPDF() {
+            document.getElementById('pdfOverlay').classList.add('hidden');
+            document.getElementById('pdfOverlay').classList.remove('flex');
+        }
+
+        // Obtener imagen y convertir a Base64 para jsPDF (Lidia con CORS)
+        async function obtenerImagenBase64Segura(driveUrl) {
+            const id = extraerDriveId(driveUrl);
+            if(!id) return null;
+            
+            const thumbUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+            
+            // Usamos proxies públicos y gratuitos para saltar la restricción CORS del navegador
+            // que nos impide convertir la imagen a Base64 para incrustarla en el PDF.
+            const proxies = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(thumbUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(thumbUrl)}`
+            ];
+
+            for (let proxyUrl of proxies) {
+                try {
+                    const response = await fetch(proxyUrl);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        return await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            // readAsDataURL convierte directamente el archivo descargado a Base64 (lo que necesita jsPDF)
+                            reader.onloadend = () => resolve(reader.result); 
+                            reader.onerror = () => resolve(null);
+                            reader.readAsDataURL(blob);
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Fallo un proxy CORS, intentando el siguiente...", e);
+                }
+            }
+
+            // Plan C: Intentar el Canvas Clásico (Por si los proxies se caen temporalmente)
+            return new Promise((resolve) => {
+                let img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    try {
+                        let canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        let ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        // Calidad 0.8 para aligerar el peso del PDF
+                        resolve(canvas.toDataURL('image/jpeg', 0.8)); 
+                    } catch(e) {
+                        resolve(null); // Si salta el error CORS del Canvas
+                    }
+                };
+                img.onerror = () => resolve(null);
+                img.src = thumbUrl;
+            });
+        }
+
+        // Generar una única ficha en PDF desde la tabla
+        async function descargarFichaPDF(fid) {
+            mostrarCargandoPDF(`Descargando e incrustando fotos para FID ${fid}...`);
+            try {
+                const dato = globalData.find(d => d.FID == fid);
+                if(!dato) throw new Error("Datos no encontrados");
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                await generarPaginaFicha(doc, dato);
+                doc.save(`Ficha_Inspeccion_PEAS_${fid}.pdf`);
+                
+            } catch (error) {
+                console.error("Error al generar Ficha", error);
+                alert("Hubo un error al generar la ficha. Revisa la consola.");
+            } finally {
+                ocultarCargandoPDF();
+            }
+        }
+
+        // Helper para dibujar el contenido estético de una ficha dentro del PDF
+        async function generarPaginaFicha(doc, data) {
+            // Marco estético de la ficha
+            doc.setDrawColor(200, 200, 200);
+            doc.setFillColor(249, 250, 251);
+            doc.roundedRect(10, 10, 190, 277, 3, 3, 'FD');
+            
+            // Título
+            doc.setFontSize(18);
+            doc.setTextColor(31, 41, 55);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Ficha de Inspección - FID: ${data.FID}`, 20, 25);
+            
+            // Línea separadora
+            doc.setDrawColor(229, 231, 235);
+            doc.line(20, 30, 190, 30);
+            
+            // Textos descriptivos
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Fecha: ${data.FECHA || '-'}`, 20, 40);
+            doc.text(`Hora: ${data.HORA || '-'}`, 100, 40);
+            
+            // Niveles
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(220, 38, 38); // Rojo Tailwind
+            doc.text(`Nivel Antes: ${data.NIVEL_ANTES || '-'} m`, 20, 50);
+            
+            doc.setTextColor(22, 163, 74); // Verde Tailwind
+            doc.text(`Nivel Después: ${data.NIVEL_DESPUES || '-'} m`, 100, 50);
+            
+            // Observaciones multilínea
+            doc.setTextColor(31, 41, 55);
+            doc.setFont("helvetica", "bold");
+            doc.text("Observación:", 20, 65);
+            
+            doc.setFont("helvetica", "normal");
+            const splitObs = doc.splitTextToSize(data.OBSERVACION || 'Sin observación', 170);
+            doc.text(splitObs, 20, 72);
+            
+            // Calculamos donde empiezan las fotos dinámicamente según lo larga que sea la observación
+            let yPhotos = 75 + (splitObs.length * 6) + 10;
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("Fotografía Antes:", 20, yPhotos);
+            doc.text("Fotografía Después:", 110, yPhotos);
+            
+            // Fotografía Antes
+            const b64Antes = await obtenerImagenBase64Segura(data.FOTO_ANTES);
+            if(b64Antes) {
+                doc.addImage(b64Antes, 'JPEG', 20, yPhotos + 5, 80, 60);
+            } else {
+                // Caja Placeholder si la imagen no se pudo acceder
+                doc.setDrawColor(150);
+                doc.rect(20, yPhotos + 5, 80, 60);
+                doc.setFont("helvetica", "normal");
+                doc.text("Imagen no procesable", 32, yPhotos + 35);
+            }
+            
+            // Fotografía Después
+            const b64Despues = await obtenerImagenBase64Segura(data.FOTO_DESPUES);
+            if(b64Despues) {
+                doc.addImage(b64Despues, 'JPEG', 110, yPhotos + 5, 80, 60);
+            } else {
+                doc.setDrawColor(150);
+                doc.rect(110, yPhotos + 5, 80, 60);
+                doc.setFont("helvetica", "normal");
+                doc.text("Imagen no procesable", 122, yPhotos + 35);
+            }
+        }
+
+        // Generar el Reporte Completo Multipartes
+        async function descargarReporte() {
+            if(globalData.length === 0) {
+                alert("No hay datos para generar el reporte.");
+                return;
+            }
+            
+            mostrarCargandoPDF("Iniciando generación de reporte completo...");
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // --- 1. PORTADA ---
+                doc.setFontSize(28);
+                doc.setFont("helvetica", "bold");
+                doc.text("Reporte de Inspección Diaria", 105, 100, { align: "center" });
+                
+                doc.setFontSize(22);
+                doc.setTextColor(59, 130, 246); // Azul
+                doc.text("PEAS Peumayén", 105, 115, { align: "center" });
+                
+                doc.setFontSize(14);
+                doc.setTextColor(100, 100, 100);
+                doc.setFont("helvetica", "normal");
+                
+                // Encontrar rango de fechas (globalData ya está ordenado del más nuevo al más viejo)
+                const oldest = globalData[globalData.length - 1];
+                const newest = globalData[0];
+                const dateRange = `Período: ${oldest.FECHA || 'N/A'} al ${newest.FECHA || 'N/A'}`;
+                doc.text(dateRange, 105, 140, { align: "center" });
+                
+                const today = new Date().toLocaleDateString('es-CL');
+                doc.text(`Fecha de emisión: ${today}`, 105, 150, { align: "center" });
+                
+                // --- 2. ÍNDICE ---
+                // Dejaremos la página 2 vacía por ahora y la rellenaremos al final cuando sepamos los números de página.
+                doc.addPage();
+                
+                // --- 3. REGISTRO HISTÓRICO (Tabla) ---
+                doc.addPage();
+                let pageHistorico = doc.internal.getCurrentPageInfo().pageNumber;
+                
+                doc.setFontSize(18);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont("helvetica", "bold");
+                doc.text("Registro Histórico", 14, 20);
+                
+                // Formateamos los datos para la librería AutoTable
+                const tableData = globalData.map(d => [
+                    d.FID, d.FECHA, d.HORA, `${d.NIVEL_ANTES}m`, `${d.NIVEL_DESPUES}m`, d.OBSERVACION || '-'
+                ]);
+                
+                doc.autoTable({
+                    startY: 28,
+                    head: [['FID', 'Fecha', 'Hora', 'N. Antes', 'N. Después', 'Observación']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [37, 99, 235], textColor: 255 }, // Azul encabezado
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: { 5: { cellWidth: 'auto' } } 
+                });
+                
+                // --- 4. EVOLUCIÓN DE NIVELES (Gráfico) ---
+                doc.addPage();
+                let pageGrafico = doc.internal.getCurrentPageInfo().pageNumber;
+                
+                doc.setFontSize(18);
+                doc.setFont("helvetica", "bold");
+                doc.text("Evolución de Niveles", 14, 20);
+                
+                // Convertimos el gráfico Canvas actual a imagen para el PDF
+                const canvas = document.getElementById('graficoNiveles');
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const ratio = canvas.height / canvas.width;
+                const width = 182; // Ancho máximo
+                const height = width * ratio;
+                doc.addImage(imgData, 'JPEG', 14, 30, width, height);
+                
+                // --- 5. FICHAS DETALLADAS (Páginas individuales) ---
+                let pageFichasInicio = doc.internal.getCurrentPageInfo().pageNumber + 1;
+                
+                for (let i = 0; i < globalData.length; i++) {
+                    doc.addPage();
+                    // Actualizar estado para dar feedback de progreso al usuario
+                    document.getElementById('pdfOverlayText').textContent = `Agregando ficha ${i+1} de ${globalData.length}...`;
+                    await generarPaginaFicha(doc, globalData[i]);
+                }
+                
+                // --- REGRESAR A ESCRIBIR EL ÍNDICE (Página 2) ---
+                doc.setPage(2);
+                doc.setFontSize(22);
+                doc.setFont("helvetica", "bold");
+                doc.text("Índice", 105, 40, { align: "center" });
+                
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "normal");
+                
+                doc.text("1. Registro Histórico", 30, 70);
+                doc.setDrawColor(200, 200, 200); doc.line(75, 69, 155, 69); // Linea estetica
+                doc.text(`Pág ${pageHistorico}`, 160, 70);
+                
+                doc.text("2. Evolución de Niveles", 30, 85);
+                doc.line(80, 84, 155, 84);
+                doc.text(`Pág ${pageGrafico}`, 160, 85);
+                
+                doc.text("3. Fichas de Inspección Detalladas", 30, 100);
+                doc.line(105, 99, 155, 99);
+                doc.text(`Pág ${pageFichasInicio}`, 160, 100);
+                
+                // --- GUARDAR ARCHIVO FINAL ---
+                document.getElementById('pdfOverlayText').textContent = "¡Guardando archivo final!";
+                doc.save("Reporte_Completo_PEAS_Peumayen.pdf");
+                
+            } catch (error) {
+                console.error("Error al generar el Reporte", error);
+                alert("Hubo un error al generar el reporte. Es posible que el navegador haya bloqueado la descarga asíncrona de algunas imágenes de Drive.");
+            } finally {
+                ocultarCargandoPDF();
+            }
         }
 
         // Iniciar carga al cargar la ventana
