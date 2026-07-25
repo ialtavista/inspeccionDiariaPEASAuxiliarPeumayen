@@ -243,38 +243,8 @@
             }
         }
 
-        function procesarDatos(table) {
-            registrosGlobales = [];
-            const cols = table.cols.map(col => col.label ? col.label.trim().toLowerCase() : '');
-            
-            table.rows.forEach(row => {
-                const filaData = {};
-                row.c.forEach((cell, index) => {
-                    const colName = cols[index];
-                    if (colName) filaData[colName] = cell ? (cell.f || cell.v) : '';
-                });
-                
-                if (filaData.fid) {
-                    registrosGlobales.push({
-                        fid: String(filaData.fid),
-                        fecha: filaData.fecha || '',
-                        hora: filaData.hora || '',
-                        nivel_antes: parseFloat(filaData.nivel_antes) || 0,
-                        nivel_despues: parseFloat(filaData.nivel_despues) || 0,
-                        observacion: filaData.observacion || 'Sin observaciones',
-                        foto_antes: filaData.foto_antes || '',
-                        foto_despues: filaData.foto_despues || ''
-                    });
-                }
-            });
-
-            registrosGlobales.reverse(); 
-            
-            actualizarSelectorFichas(); 
-            
-            aplicarFiltroRapido('10'); 
-        }
-
+        
+        
         function actualizarSelectorFichas() {
             const selector = document.getElementById('selectorFicha');
             selector.innerHTML = '';
@@ -362,7 +332,6 @@
                 actualizarGrafico();
             }
         }
-
         function actualizarGrafico() {
             const ctx = document.getElementById('graficoNiveles').getContext('2d');
             const datosGrafico = [...datosFiltrados].reverse(); 
@@ -370,15 +339,15 @@
             const labels = datosGrafico.map(r => `${r.fecha.substring(0,5)}`);
             const dataAntes = datosGrafico.map(r => r.nivel_antes);
             
-            // 1. Dataset constante para el límite de profundidad (3 metros)
+            // Dataset constante para el límite de profundidad (3 metros)
             const dataLimite = datosGrafico.map(() => 3.0);
             
-            // 2. Simulación de lluvia (Aquí lo ideal es mapear una nueva columna de tu Sheet: r.lluvia)
-            const dataLluvia = datosGrafico.map(() => Math.floor(Math.random() * 12)); 
+            // AHORA TOMA EL DATO REAL DE TU GOOGLE SHEETS
+            const dataLluvia = datosGrafico.map(r => r.lluvia); 
 
             if (graficoInstancia) graficoInstancia.destroy();
 
-            // 3. Plugin Oficial para forzar fondo blanco (Soluciona el bug del PDF)
+            // Plugin Oficial para forzar fondo blanco (Soluciona el bug del PDF)
             const pluginFondoBlanco = {
                 id: 'fondoBlanco',
                 beforeDraw: (chart) => {
@@ -483,6 +452,7 @@
                 }
             });
         }
+ 
         function getDriveId(url) {
             if (!url) return null;
             const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
