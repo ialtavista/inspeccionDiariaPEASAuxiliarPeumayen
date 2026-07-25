@@ -1,12 +1,20 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inspección diaria PEAS Auxiliar Peumayén</title>
 
-    <!-- Tailwind CSS para Diseño Responsivo -->
+    <!-- Tailwind CSS (Con Configuración de Dark Mode) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
 
     <!-- Driver.js para el Tutorial Guiado -->
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
@@ -26,28 +34,38 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            transition: background-color 0.3s, color 0.3s;
         }
         
-        /* Barra de desplazamiento elegante para las tablas */
+        /* Barra de desplazamiento elegante para las tablas (Soporta Dark Mode) */
         .custom-scrollbar::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
+            height: 8px; width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9; 
-            border-radius: 4px;
+            background: #f1f5f9; border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 4px;
+            background: #cbd5e1; border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8; 
         }
     </style>
 </head>
-<body class="p-2 sm:p-4 md:p-6 min-h-screen flex flex-col text-slate-800">
+<body class="p-2 sm:p-4 md:p-6 min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+
+    <!-- Inicializador rápido de tema oscuro para evitar destellos -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
 
     <!-- Overlay de Carga para procesos pesados (PDFs) -->
     <div id="pdfOverlay" class="fixed inset-0 z-[100] hidden bg-slate-900 bg-opacity-90 flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity">
@@ -60,17 +78,17 @@
     </div>
 
     <!-- Cabecera de la Aplicación -->
-    <header class="mb-4 lg:mb-6 flex flex-col md:flex-row justify-between items-center bg-white p-4 lg:p-5 rounded-xl shadow-sm border border-slate-200 gap-4">
+    <header class="mb-4 lg:mb-6 flex flex-col md:flex-row justify-between items-center bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 gap-4 transition-colors">
         <div class="flex items-center gap-3">
-            <div class="bg-blue-100 text-blue-600 p-2.5 rounded-lg">
+            <div class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 p-2.5 rounded-lg transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
             </div>
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"> Inspección diaria <span class="text-blue-600">PEAS Auxiliar Peumayén</span></h1>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white leading-tight"> Inspección diaria <span class="text-blue-600 dark:text-blue-400">PEAS Peumayén</span></h1>
                 <div class="flex items-center gap-2 mt-1">
-                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Plataforma de Reportes Dinámicos - Ingeniería AVAS SpA</p>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Plataforma de Reportes - Ingeniería AVAS SpA</p>
                     <!-- INDICADOR EN VIVO (Auto-Refresh) -->
-                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
                         <span class="relative flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -79,92 +97,97 @@
                     </span>
                 </div>
             </div>
-            <!-- BOTÓN DE TUTORIAL CON ID -->
-            <button id="btnAyudaTutorial" onclick="iniciarTutorial(true)" class="ml-2 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded-full transition-colors border border-slate-100 shadow-sm" title="Ver Tutorial nuevamente">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </button>
+            <div class="flex gap-2 ml-2">
+                <!-- BOTÓN DARK MODE -->
+                <button id="btnDarkMode" onclick="toggleDarkMode()" class="text-slate-400 hover:text-amber-500 dark:hover:text-amber-300 bg-slate-50 dark:bg-slate-700 hover:bg-amber-50 dark:hover:bg-slate-600 p-2 rounded-full transition-colors border border-slate-100 dark:border-slate-600 shadow-sm" title="Alternar Modo Oscuro">
+                    <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
+                <!-- BOTÓN DE TUTORIAL -->
+                <button id="btnAyudaTutorial" onclick="iniciarTutorial(true)" class="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 p-2 rounded-full transition-colors border border-slate-100 dark:border-slate-600 shadow-sm" title="Ver Tutorial nuevamente">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </button>
+            </div>
         </div>
-        <!-- BOTÓN DESCARGAR REPORTE CON ID -->
-        <button id="btnDescargarReporte" onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
+        <button id="btnDescargarReporte" onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Descargar Reporte histórico PDF
+            Descargar Reporte Histórico PDF
         </button>
     </header>
 
-    <!-- Contenedor Principal a 2 Columnas en Escritorio / Apilado en Móvil -->
+    <!-- Contenedor Principal a 2 Columnas -->
     <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
         
         <!-- Columna Izquierda: Selector y Ficha -->
         <section class="w-full lg:w-5/12 flex flex-col gap-4">
             
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <label for="selectorFicha" class="block text-sm font-semibold text-slate-700 mb-2">Seleccionar Inspección Específica:</label>
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+                <label for="selectorFicha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Seleccionar Inspección Específica:</label>
                 <div class="relative">
-                    <select id="selectorFicha" onchange="cambiarFicha(this.value)" class="block w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none font-medium">
+                    <select id="selectorFicha" onchange="cambiarFicha(this.value)" class="block w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none font-medium transition-colors">
                         <option value="">Cargando datos...</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 dark:text-slate-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
             </div>
 
-            <div id="fichaDetalle" class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col hidden h-full">
-                <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <div id="fichaDetalle" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col hidden h-full transition-colors">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+                    <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Datos de Inspección
                     </h2>
                 </div>
                 
-                <div class="bg-slate-50 p-4 rounded-lg mb-4 grid grid-cols-2 gap-y-3 gap-x-4 text-sm relative">
-                    <!-- Badge del Semáforo posicionado arriba a la derecha -->
+                <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg mb-4 grid grid-cols-2 gap-y-3 gap-x-4 text-sm relative transition-colors border border-slate-100 dark:border-slate-800">
                     <div class="absolute top-4 right-4">
                         <span id="detEstado" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"></span>
                     </div>
 
-                    <div><span class="text-slate-500 block text-xs font-semibold uppercase">FID</span> <span id="detFid" class="font-bold text-slate-900 text-base"></span></div>
-                    <div><span class="text-slate-500 block text-xs font-semibold uppercase">Fecha y Hora</span> <span id="detFechaHora" class="font-bold text-slate-900 text-base"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">FID</span> <span id="detFid" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Fecha y Hora</span> <span id="detFechaHora" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
                     
                     <div class="col-span-2">
-                        <span class="text-slate-500 block text-xs font-semibold uppercase">Operador Responsable</span> 
-                        <span id="detOperador" class="font-medium text-slate-700"></span>
+                        <span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Operador Responsable</span> 
+                        <span id="detOperador" class="font-medium text-slate-700 dark:text-slate-300"></span>
                     </div>
 
                     <div class="col-span-2">
-                        <span class="text-slate-500 block text-xs font-semibold uppercase mb-1">Observación</span> 
-                        <div id="detObs" class="bg-white p-2.5 rounded border border-slate-200 text-slate-700 min-h-[3rem]"></div>
+                        <span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase mb-1">Observación</span> 
+                        <div id="detObs" class="bg-white dark:bg-slate-800 p-2.5 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 min-h-[3rem]"></div>
                     </div>
                     
-                    <div class="bg-white p-2 rounded border border-slate-200 text-center shadow-sm">
-                        <span class="text-slate-500 block text-xs font-semibold uppercase">Nivel inicial</span> 
-                        <span id="detNivelAntes" class="text-blue-600 font-bold text-lg"></span> <span class="text-slate-400">m</span>
+                    <div class="bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+                        <span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Nivel inicial</span> 
+                        <span id="detNivelAntes" class="text-blue-600 dark:text-blue-400 font-bold text-lg"></span> <span class="text-slate-400">m</span>
                     </div>
-                    <div class="bg-white p-2 rounded border border-slate-200 text-center shadow-sm">
-                        <span class="text-slate-500 block text-xs font-semibold uppercase">Nivel final</span> 
-                        <span id="detNivelDespues" class="text-emerald-600 font-bold text-lg"></span> <span class="text-slate-400">m</span>
+                    <div class="bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+                        <span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Nivel final</span> 
+                        <span id="detNivelDespues" class="text-emerald-600 dark:text-emerald-400 font-bold text-lg"></span> <span class="text-slate-400">m</span>
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4 mt-2">
                     <div class="flex-1 flex flex-col items-center">
-                        <span class="text-slate-600 font-medium mb-1.5 text-sm">Registro Inicial</span>
-                        <div class="w-full h-56 sm:h-64 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 relative">
+                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm">Registro Inicial</span>
+                        <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative">
                             <img id="detFotoAntes" class="w-full h-full object-contain p-1" src="" alt="Foto Antes">
                         </div>
                     </div>
                     <div class="flex-1 flex flex-col items-center">
-                        <span class="text-slate-600 font-medium mb-1.5 text-sm">Registro Final</span>
-                        <div class="w-full h-56 sm:h-64 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 relative">
+                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm">Registro Final</span>
+                        <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative">
                             <img id="detFotoDespues" class="w-full h-full object-contain p-1" src="" alt="Foto Después">
                         </div>
                     </div>
                 </div>
                 
-                <div class="mt-5 pt-4 border-t border-slate-100 flex justify-end">
+                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
                     <button onclick="descargarFichaActual()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-5 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        Descargar Ficha de Inspección (.pdf)
+                        Descargar Ficha PDF
                     </button>
                 </div>
             </div>
@@ -173,14 +196,14 @@
         <!-- Columna Derecha: Filtros, Tabla y Gráfico -->
         <section class="w-full lg:w-7/12 flex flex-col gap-4 lg:gap-6 min-w-0">
             
-            <!-- Tabla Histórica -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: 450px;">
+            <!-- Tabla Histórica con Ordenamiento -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col transition-colors" style="height: 450px;">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-3">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                         Registro Histórico
                     </h2>
-                    <select id="filtroSelector" onchange="cambiarModoFiltro()" class="text-sm font-medium bg-slate-50 border border-slate-300 text-slate-900 rounded-lg p-2 focus:ring-blue-500 w-full sm:w-auto">
+                    <select id="filtroSelector" onchange="cambiarModoFiltro()" class="text-sm font-medium bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2 focus:ring-blue-500 w-full sm:w-auto">
                         <option value="10">Últimas 10 inspecciones</option>
                         <option value="30">Últimas 30 inspecciones</option>
                         <option value="rango">Filtrar por Rango...</option>
@@ -188,31 +211,41 @@
                     </select>
                 </div>
 
-                <div id="panelFechas" class="hidden flex-col sm:flex-row items-center gap-2 mb-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm">
+                <div id="panelFechas" class="hidden flex-col sm:flex-row items-center gap-2 mb-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label class="text-slate-600 font-semibold">Desde:</label>
-                        <input type="date" id="fechaInicio" class="border border-slate-300 rounded-md p-1.5 flex-1 outline-none">
+                        <label class="text-slate-600 dark:text-slate-300 font-semibold">Desde:</label>
+                        <input type="date" id="fechaInicio" class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white rounded-md p-1.5 flex-1 outline-none">
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label class="text-slate-600 font-semibold">Hasta:</label>
-                        <input type="date" id="fechaFin" class="border border-slate-300 rounded-md p-1.5 flex-1 outline-none">
+                        <label class="text-slate-600 dark:text-slate-300 font-semibold">Hasta:</label>
+                        <input type="date" id="fechaFin" class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white rounded-md p-1.5 flex-1 outline-none">
                     </div>
-                    <button onclick="aplicarFiltroPersonalizado()" class="w-full sm:w-auto bg-blue-600 text-white font-medium px-4 py-1.5 rounded-md hover:bg-blue-700 transition">Aplicar Rango</button>
+                    <button onclick="aplicarFiltroPersonalizado()" class="w-full sm:w-auto bg-blue-600 text-white font-medium px-4 py-1.5 rounded-md hover:bg-blue-700 transition">Aplicar</button>
                 </div>
 
-                <div class="flex-1 overflow-auto custom-scrollbar border border-slate-200 rounded-lg relative">
+                <div class="flex-1 overflow-auto custom-scrollbar border border-slate-200 dark:border-slate-700 rounded-lg relative">
                     <table class="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
-                        <thead class="bg-slate-100 sticky top-0 z-10 text-slate-600 font-semibold uppercase text-xs border-b border-slate-200 shadow-sm">
+                        <thead class="bg-slate-100 dark:bg-slate-900 sticky top-0 z-10 text-slate-600 dark:text-slate-400 font-semibold uppercase text-xs border-b border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
                             <tr>
-                                <th class="p-3">fid</th>
-                                <th class="p-3">Estado</th>
-                                <th class="p-3">Fecha / Hora</th>
-                                <th class="p-3">Operador</th>
-                                <th class="p-3">Nivel (m)</th>
+                                <th class="p-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none" onclick="ordenarTabla('fid')">
+                                    <div class="flex items-center gap-1">FID <span id="sort-fid" class="text-blue-500"></span></div>
+                                </th>
+                                <th class="p-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none" onclick="ordenarTabla('estado')">
+                                    <div class="flex items-center gap-1">Estado <span id="sort-estado" class="text-blue-500"></span></div>
+                                </th>
+                                <th class="p-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none" onclick="ordenarTabla('fecha')">
+                                    <div class="flex items-center gap-1">Fecha / Hora <span id="sort-fecha" class="text-blue-500"></span></div>
+                                </th>
+                                <th class="p-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none" onclick="ordenarTabla('operador')">
+                                    <div class="flex items-center gap-1">Operador <span id="sort-operador" class="text-blue-500"></span></div>
+                                </th>
+                                <th class="p-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none" onclick="ordenarTabla('nivel')">
+                                    <div class="flex items-center gap-1">Nivel (m) <span id="sort-nivel" class="text-blue-500"></span></div>
+                                </th>
                                 <th class="p-3 w-full">Observación</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaCuerpo" class="divide-y divide-slate-100 text-slate-700">
+                        <tbody id="tablaCuerpo" class="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-300">
                             <tr><td colspan="6" class="p-4 text-center">Cargando datos desde Google Sheets...</td></tr>
                         </tbody>
                     </table>
@@ -220,8 +253,8 @@
             </div>
 
             <!-- Gráfico -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 min-h-[300px]">
-                <h2 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[300px] transition-colors">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
                     Evolución del nivel al interior del pozo
                 </h2>
@@ -236,31 +269,42 @@
     <script>
         const SHEET_ID = '17AdORP1p500PO9WOir7BmptH424-NKF3oiHA9z13VoM';
         const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-
-        // ==========================================
-        // CONFIGURACIÓN DEL LOGO AVAS SpA
-        // ==========================================
         const URL_LOGO_EMPRESA = 'LogoAvas.jpg'; 
         
         let cachedLogoBase64 = null; 
         let registrosGlobales = []; 
         let datosFiltrados = [];    
         let graficoInstancia = null;
+        
+        // Variables para Ordenamiento (Sorting)
+        let sortCol = 'fecha';
+        let sortAsc = false; 
+
         const { jsPDF } = window.jspdf;
+
+        // ==========================================
+        // MODO OSCURO - TOGGLE JS
+        // ==========================================
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.theme = 'dark';
+            } else {
+                localStorage.theme = 'light';
+            }
+            // Redibujar gráfico para aplicar colores adaptados
+            if(datosFiltrados.length > 0) actualizarGrafico();
+        }
 
         window.onload = async () => {
             await obtenerDatos();
             obtenerLogoBase64().then(b64 => cachedLogoBase64 = b64);
             
-            // Iniciar tutorial 1 segundo después de cargar los datos
-            setTimeout(() => {
-                iniciarTutorial(false);
-            }, 1000);
+            setTimeout(() => { iniciarTutorial(false); }, 1000);
 
-            // Iniciar Auto-Refresh cada 3 minutos (180000 milisegundos)
             setInterval(() => {
                 console.log("Actualizando datos en segundo plano...");
-                obtenerDatos(true); // true = modo silencioso
+                obtenerDatos(true); 
             }, 180000);
         };
 
@@ -295,32 +339,25 @@
             } catch (error) {
                 console.error("Error al obtener datos:", error);
                 if (!silencioso) {
-                    document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos. Revisa la consola para más detalles.</td></tr>`;
+                    document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos.</td></tr>`;
                 }
             }
         }
 
-        // Función Reforzada para manejar celdas vacías o nulas
         function procesarDatos(table, silencioso = false) {
-            const fichaActualElement = document.getElementById('selectorFicha');
-            const fichaActual = fichaActualElement ? fichaActualElement.value : null;
+            const fichaActual = document.getElementById('selectorFicha').value;
             const tablaContainer = document.querySelector('.custom-scrollbar');
             const scrollPos = tablaContainer ? tablaContainer.scrollTop : 0;
 
             registrosGlobales = [];
-            
             const cols = table.cols.map(col => col.label ? col.label.trim().toLowerCase() : '');
             
             table.rows.forEach(row => {
                 const filaData = {};
-                // Asegurarse de que row.c existe
                 if(row.c) {
                     row.c.forEach((cell, index) => {
                         const colName = cols[index];
-                        if (colName) {
-                            // Manejo seguro de celdas nulas (null) que envía Sheets cuando está vacío
-                            filaData[colName] = (cell && cell !== null) ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
-                        }
+                        if (colName) filaData[colName] = (cell && cell !== null) ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
                     });
                 }
                 
@@ -349,69 +386,36 @@
                     cambiarFicha(fichaActual);
                 }
                 cambiarModoFiltro(); 
-                if (tablaContainer) tablaContainer.scrollTop = scrollPos; 
+                if (tablaContainer) tablaContainer.scrollTop = scrollPos;
             } else {
                 aplicarFiltroRapido('10'); 
             }
         }
 
-        // ==========================================
-        // MOTOR DEL TUTORIAL GUIADO
-        // ==========================================
         function iniciarTutorial(forzarRepeticion = false) {
             const tutorialVisto = localStorage.getItem('avas_tutorial_peas');
             if (tutorialVisto === 'true' && !forzarRepeticion) return;
 
             const driver = window.driver.js.driver;
             const driverObj = driver({
-                showProgress: true,
-                animate: true,
-                doneBtnText: 'Entendido',
-                nextBtnText: 'Siguiente',
-                prevBtnText: 'Anterior',
+                showProgress: true, animate: true,
+                doneBtnText: 'Entendido', nextBtnText: 'Siguiente', prevBtnText: 'Anterior',
                 progressText: 'Paso {{current}} de {{total}}',
                 steps: [
-                    { 
-                        popover: { 
-                            title: '¡Bienvenido a la Plataforma!', 
-                            description: 'Haremos un recorrido muy rápido para mostrarte cómo aprovechar todas las herramientas de este panel.' 
-                        } 
-                    },
-                    { 
-                        element: '#selectorFicha', 
-                        popover: { title: 'Buscador de Inspecciones', description: 'Aquí puedes desplegar y buscar por fecha o FID cualquier inspección antigua para revisar sus datos y fotos al instante.' } 
-                    },
-                    { 
-                        element: '#fichaDetalle', 
-                        popover: { title: 'Ficha Detallada', description: 'Visualiza el estado del semáforo, el operador de turno, niveles y la evidencia fotográfica. Desde aquí puedes descargar esta ficha específica en PDF.' } 
-                    },
-                    { 
-                        element: '#filtroSelector', 
-                        popover: { title: 'Filtros Inteligentes', description: 'Controla cuánta información ves. Puedes mostrar los últimos 10 o 30 registros, o definir un rango de fechas personalizado.' } 
-                    },
-                    { 
-                        element: '#tablaCuerpo', 
-                        popover: { title: 'Tabla Interactiva', description: 'Revisa el histórico general. ¡Tip pro!: Haz clic en cualquier fila de esta tabla para abrir automáticamente sus detalles en el panel izquierdo.' } 
-                    },
-                    { 
-                        element: '#graficoNiveles', 
-                        popover: { title: 'Gráfico y Lluvias', description: 'Observa la evolución del pozo respecto al límite de 3 metros y cruza los datos con la lluvia caída. Pasa el ratón sobre los puntos para ver el detalle exacto.' } 
-                    },
-                    { 
-                        element: '#btnDescargarReporte',
-                        popover: { title: 'Reporte Gerencial Maestro', description: 'Este botón generará un documento PDF consolidado con todos los datos y fotos que estés filtrando actualmente en pantalla.' } 
-                    },
-                    { 
-                        element: '#btnAyudaTutorial',
-                        popover: { title: '¿Necesitas repasar?', description: 'Si en algún momento tienes dudas sobre cómo usar la plataforma, puedes hacer clic en este botón para repetir este recorrido guiado. ¡Estás listo para comenzar!' } 
-                    }
+                    { popover: { title: '¡Bienvenido a la Plataforma!', description: 'Haremos un recorrido muy rápido.' } },
+                    { element: '#selectorFicha', popover: { title: 'Buscador de Inspecciones', description: 'Aquí puedes desplegar y buscar por fecha o FID cualquier inspección.' } },
+                    { element: '#fichaDetalle', popover: { title: 'Ficha Detallada', description: 'Visualiza el estado del semáforo, operador, niveles y fotos. Puedes descargar esta ficha en PDF.' } },
+                    { element: '#filtroSelector', popover: { title: 'Filtros Inteligentes', description: 'Controla cuánta información ves en la tabla y gráfico.' } },
+                    { element: '#tablaCuerpo', popover: { title: 'Tabla Interactiva', description: '¡NUEVO! Haz clic en los títulos para ordenar (Ej: por Operador o Nivel). Haz clic en la fila para ver su ficha.' } },
+                    { element: '#btnDarkMode', popover: { title: 'Modo Oscuro', description: 'Cambia entre el modo claro y oscuro según tu preferencia visual.' } },
+                    { element: '#btnDescargarReporte', popover: { title: 'Reporte Maestro', description: 'Genera un documento PDF con todos los datos filtrados actualmente.' } },
+                    { element: '#btnAyudaTutorial', popover: { title: '¿Necesitas repasar?', description: 'Haz clic aquí para repetir este recorrido. ¡Estás listo!' } }
                 ],
                 onDestroyStarted: () => {
                     localStorage.setItem('avas_tutorial_peas', 'true');
                     driverObj.destroy();
                 }
             });
-
             driverObj.drive();
         }
         
@@ -448,7 +452,7 @@
             if (modo === '10') datosFiltrados = registrosGlobales.slice(0, 10);
             else if (modo === '30') datosFiltrados = registrosGlobales.slice(0, 30);
             else datosFiltrados = [...registrosGlobales];
-            actualizarUI();
+            ejecutarOrdenamiento(); // Ordena antes de dibujar
         }
 
         function aplicarFiltroPersonalizado() {
@@ -470,16 +474,56 @@
                 cambiarModoFiltro();
                 return;
             }
+            ejecutarOrdenamiento();
+        }
+
+        // ==========================================
+        // MOTOR DE ORDENAMIENTO (SORTING)
+        // ==========================================
+        function ordenarTabla(col) {
+            if (sortCol === col) {
+                sortAsc = !sortAsc; // Invierte el orden si haces clic en la misma
+            } else {
+                sortCol = col;
+                sortAsc = true; // Por defecto ascendente si cambias de columna
+            }
+            ejecutarOrdenamiento();
+        }
+
+        function ejecutarOrdenamiento() {
+            datosFiltrados.sort((a, b) => {
+                let valA, valB;
+                switch(sortCol) {
+                    case 'fid': valA = parseInt(a.fid); valB = parseInt(b.fid); break;
+                    case 'estado': valA = a.nivel_antes; valB = b.nivel_antes; break; // Nivel define estado
+                    case 'fecha': 
+                        valA = parseFechaHora(a.fecha, a.hora).getTime(); 
+                        valB = parseFechaHora(b.fecha, b.hora).getTime(); 
+                        break;
+                    case 'operador': valA = a.operador.toLowerCase(); valB = b.operador.toLowerCase(); break;
+                    case 'nivel': valA = a.nivel_antes; valB = b.nivel_antes; break;
+                    default: return 0;
+                }
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            // Actualizar UI de flechas
+            ['fid', 'estado', 'fecha', 'operador', 'nivel'].forEach(c => {
+                document.getElementById('sort-' + c).textContent = (sortCol === c) ? (sortAsc ? '▲' : '▼') : '';
+            });
+
             actualizarUI();
         }
 
         function obtenerEstadoSemaforo(nivel) {
             if (nivel < 1.5) {
-                return { texto: 'Normal', bg: 'bg-emerald-100', text: 'text-emerald-700', pdfBg: [209, 250, 229], pdfText: [4, 120, 87] };
+                return { texto: 'Normal', bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-700 dark:text-emerald-400', pdfBg: [209, 250, 229], pdfText: [4, 120, 87] };
             } else if (nivel <= 2.5) {
-                return { texto: 'Alerta', bg: 'bg-amber-100', text: 'text-amber-700', pdfBg: [254, 243, 199], pdfText: [180, 83, 9] };
+                return { texto: 'Alerta', bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-400', pdfBg: [254, 243, 199], pdfText: [180, 83, 9] };
             } else {
-                return { texto: 'Crítico', bg: 'bg-red-100', text: 'text-red-700', pdfBg: [254, 226, 226], pdfText: [185, 28, 28] };
+                return { texto: 'Crítico', bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-400', pdfBg: [254, 226, 226], pdfText: [185, 28, 28] };
             }
         }
 
@@ -489,7 +533,7 @@
 
             datosFiltrados.forEach(reg => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50 cursor-pointer transition-colors border-b border-slate-100 last:border-0";
+                tr.className = "hover:bg-blue-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0";
                 
                 const estado = obtenerEstadoSemaforo(reg.nivel_antes);
                 
@@ -499,16 +543,16 @@
                 };
                 
                 tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-900">${reg.fid}</td>
+                    <td class="p-3 font-bold text-slate-900 dark:text-white">${reg.fid}</td>
                     <td class="p-3">
                         <span class="px-2 py-1 rounded text-xs font-bold ${estado.bg} ${estado.text}">${estado.texto}</span>
                     </td>
-                    <td class="p-3">${reg.fecha} <span class="text-slate-400 text-xs ml-1">${reg.hora}</span></td>
-                    <td class="p-3 text-slate-600 text-xs">${reg.operador}</td>
+                    <td class="p-3">${reg.fecha} <span class="text-slate-400 dark:text-slate-500 text-xs ml-1">${reg.hora}</span></td>
+                    <td class="p-3 text-slate-600 dark:text-slate-400 text-xs">${reg.operador}</td>
                     <td class="p-3">
-                        <span class="text-blue-600 font-bold">${reg.nivel_antes}</span> 
-                        <span class="text-slate-400 text-xs mx-1">-></span> 
-                        <span class="text-emerald-600 font-semibold">${reg.nivel_despues}</span>
+                        <span class="text-blue-600 dark:text-blue-400 font-bold">${reg.nivel_antes}</span> 
+                        <span class="text-slate-400 dark:text-slate-500 text-xs mx-1">-></span> 
+                        <span class="text-emerald-600 dark:text-emerald-400 font-semibold">${reg.nivel_despues}</span>
                     </td>
                     <td class="p-3 truncate max-w-[150px]" title="${reg.observacion}">${reg.observacion}</td>
                 `;
@@ -546,22 +590,30 @@
 
         function actualizarGrafico() {
             const ctx = document.getElementById('graficoNiveles').getContext('2d');
-            const datosGrafico = [...datosFiltrados].reverse(); 
+            
+            // EL GRÁFICO SIEMPRE DEBE SER CRONOLÓGICO, ignorando si el usuario ordenó la tabla por Nombre o Nivel
+            const datosCronologicos = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
 
-            // Transformamos los datos a formato coordenado { x: FechaReal, y: Valor }
-            const dataAntes = datosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
-            const dataLimite = datosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
-            const dataLluvia = datosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia })); 
+            const dataAntes = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
+            const dataLimite = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
+            const dataLluvia = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia })); 
 
             if (graficoInstancia) graficoInstancia.destroy();
 
-            const pluginFondoBlanco = {
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? '#334155' : '#f1f5f9';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            // Mantenemos fondo blanco sólido EXCLUSIVAMENTE para exportar perfecto a PDF, 
+            // pero el lienzo de web usa fondo transparente para heredar el Dark Mode
+            const pluginFondoBlancoPDF = {
                 id: 'fondoBlanco',
                 beforeDraw: (chart) => {
+                    if(chart.config.options.plugins.fondoBlanco === false) return;
                     const ctx = chart.canvas.getContext('2d');
                     ctx.save();
                     ctx.globalCompositeOperation = 'destination-over';
-                    ctx.fillStyle = 'white';
+                    ctx.fillStyle = 'white'; 
                     ctx.fillRect(0, 0, chart.width, chart.height);
                     ctx.restore();
                 }
@@ -607,19 +659,20 @@
                         }
                     ]
                 },
-                plugins: [pluginFondoBlanco],
+                plugins: [pluginFondoBlancoPDF],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: true, position: 'top', labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true } },
+                        fondoBlanco: false, // Desactivado para web (respeta dark mode), se activa temporalmente en PDF
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { family: 'Inter', size: 11 }, usePointStyle: true } },
                         tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
                             callbacks: {
                                 label: function(context) {
                                     if (context.datasetIndex === 0) return ` Precipitación: ${context.raw.y} mm`;
                                     if (context.datasetIndex === 1) {
-                                        const reg = datosGrafico[context.dataIndex];
+                                        const reg = datosCronologicos[context.dataIndex];
                                         return [
                                             ` Nivel Hallado: ${reg.nivel_antes} m`,
                                             ` Post-Agotamiento: ${reg.nivel_despues} m`
@@ -633,23 +686,25 @@
                     scales: {
                         yNivel: { 
                             type: 'linear', position: 'left', beginAtZero: true, 
-                            title: { display: true, text: 'Nivel del Pozo (m)', font: {family: 'Inter', size: 11} },
-                            grid: { color: '#f1f5f9' }, suggestedMax: 3.5 
+                            title: { display: true, text: 'Nivel del Pozo (m)', color: textColor, font: {family: 'Inter', size: 11} },
+                            grid: { color: gridColor }, suggestedMax: 3.5,
+                            ticks: { color: textColor }
                         },
                         yLluvia: {
                             type: 'linear', position: 'right', beginAtZero: true,
-                            title: { display: true, text: 'Lluvia Caída (mm)', font: {family: 'Inter', size: 11}, color: '#0284c7' },
-                            grid: { drawOnChartArea: false }, suggestedMax: 30
+                            title: { display: true, text: 'Lluvia Caída (mm)', color: '#38bdf8', font: {family: 'Inter', size: 11} },
+                            grid: { drawOnChartArea: false }, suggestedMax: 30,
+                            ticks: { color: textColor }
                         },
                         x: {
-                            type: 'time',
+                            type: 'time', 
                             time: {
                                 tooltipFormat: 'dd/MM/yyyy HH:mm',
                                 displayFormats: { day: 'dd MMM', hour: 'HH:mm' }
                             },
-                            offset: true,
+                            offset: true, 
                             grid: { display: false },
-                            ticks: { maxTicksLimit: 8, font: {family: 'Inter', size: 10} }
+                            ticks: { color: textColor, maxTicksLimit: 8, font: {family: 'Inter', size: 10} }
                         }
                     }
                 }
@@ -673,9 +728,7 @@
             const id = getDriveId(urlOriginal);
             let finalUrl = urlOriginal;
             
-            if (id) {
-                finalUrl = `https://wsrv.nl/?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${id}`)}&output=jpg&q=80`;
-            }
+            if (id) finalUrl = `https://wsrv.nl/?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${id}`)}&output=jpg&q=80`;
 
             try {
                 const controller = new AbortController();
@@ -699,9 +752,8 @@
         }
 
         async function obtenerLogoBase64() {
-            try {
-                return await obtenerImagenBase64Segura(URL_LOGO_EMPRESA);
-            } catch(e) { return null; }
+            try { return await obtenerImagenBase64Segura(URL_LOGO_EMPRESA); } 
+            catch(e) { return null; }
         }
 
         function toggleOverlay(show, text="Procesando...") {
@@ -725,25 +777,17 @@
                     }
 
                     let offsetX = xBase;
-                    if (alignment === 'center') {
-                        offsetX = xBase + (boxWidth - finalW) / 2;
-                    } else if (alignment === 'right') {
-                        offsetX = xBase + (boxWidth - finalW);
-                    }
+                    if (alignment === 'center') offsetX = xBase + (boxWidth - finalW) / 2;
+                    else if (alignment === 'right') offsetX = xBase + (boxWidth - finalW);
                     
                     let offsetY = yBase + (boxHeight - finalH) / 2;
-                    
                     let imgFormat = 'JPEG';
                     if (base64Data.match(/data:image\/png/i)) imgFormat = 'PNG';
                     else if (base64Data.match(/data:image\/webp/i)) imgFormat = 'WEBP';
                     
                     doc.addImage(base64Data, imgFormat, offsetX, offsetY, finalW, finalH);
-                } catch (e) {
-                    manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo);
-                }
-            } else {
-                manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo);
-            }
+                } catch (e) { manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo); }
+            } else { manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo); }
         }
 
         function manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo) {
@@ -758,22 +802,15 @@
         }
 
         function dibujarPieYEncabezado(doc, numeroPagina, totalPaginas, esPortada = false) {
-            if (!esPortada) {
-                dibujarImagenConRatio(doc, cachedLogoBase64, 14, 8, 40, 15, 'left', true);
-            }
-
+            if (!esPortada) dibujarImagenConRatio(doc, cachedLogoBase64, 14, 8, 40, 15, 'left', true);
             const pageHeight = doc.internal.pageSize.height;
             doc.setDrawColor(200, 200, 200);
             doc.line(14, pageHeight - 12, 196, pageHeight - 12); 
-            
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
             doc.setTextColor(100, 100, 100);
-            
             doc.text("Elaborado por Ingeniería AVAS SpA", 14, pageHeight - 7);
-            if (totalPaginas > 0) {
-                doc.text(`Página ${numeroPagina} de ${totalPaginas}`, 196, pageHeight - 7, { align: 'right' });
-            }
+            if (totalPaginas > 0) doc.text(`Página ${numeroPagina} de ${totalPaginas}`, 196, pageHeight - 7, { align: 'right' });
         }
 
         async function generarPaginaFicha(doc, registro, yBaseOffset = 20) {
@@ -813,7 +850,7 @@
             const splitObs = doc.splitTextToSize(registro.observacion || '-', 135);
             doc.text(splitObs, 45, yBaseOffset + 26);
 
-            let yFotos = yBaseOffset + 53; 
+            let yFotos = yBaseOffset + 53;
             doc.setFont("helvetica", "bold");
             doc.text("Registro Fotográfico Inicial", 55, yFotos, { align: "center" });
             doc.text("Registro Fotográfico Final", 155, yFotos, { align: "center" });
@@ -837,9 +874,7 @@
 
             try {
                 const doc = new jsPDF();
-                
                 await generarPaginaFicha(doc, registro, 35);
-                
                 dibujarPieYEncabezado(doc, 1, 1, false);
 
                 const nombreArchivo = `Ficha_${fid}_${registro.fecha.replace(/\//g, '-')}_${registro.hora.replace(/:/g, '-')}.pdf`;
@@ -853,43 +888,40 @@
 
         async function descargarReporte() {
             if (datosFiltrados.length === 0) return alert("No hay datos para reportar.");
-
             toggleOverlay(true, "Compilando Reporte Maestro...");
 
             try {
                 const doc = new jsPDF();
                 const totalFichas = datosFiltrados.length;
                 
-                // PÁGINA 1: PORTADA
+                // PÁGINA 1
                 dibujarImagenConRatio(doc, cachedLogoBase64, 105 - 35, 30, 70, 30, 'center', true);
-                
                 doc.setFontSize(26); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
                 doc.text("Reporte de Inspección Diaria", 105, 80, { align: "center" });
                 doc.setFontSize(20); doc.text("PEAS Peumayén", 105, 95, { align: "center" });
-                
                 doc.setFontSize(12); doc.setTextColor(100); doc.setFont("helvetica", "normal");
-                const fInicio = datosFiltrados[datosFiltrados.length - 1].fecha;
-                const fFin = datosFiltrados[0].fecha;
+                
+                // Ordenar cronologicamente para sacar fecha de inicio y fin real
+                const datosOrdenados = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
+                const fInicio = datosOrdenados[0].fecha;
+                const fFin = datosOrdenados[datosOrdenados.length - 1].fecha;
+
                 doc.text(`Período de Análisis: ${fInicio} al ${fFin}`, 105, 120, { align: "center" });
                 doc.text(`Fecha de Emisión: ${new Date().toLocaleDateString()}`, 105, 130, { align: "center" });
                 doc.text(`Total Registros Procesados: ${totalFichas}`, 105, 140, { align: "center" });
                 doc.text(`Elaborado por Ingeniería AVAS SpA`, 105, 150, { align: "center" });
                 
-                // PÁGINA 2: ÍNDICE
-                doc.addPage();
-                
-                // PÁGINA 3+: REGISTRO HISTÓRICO
+                doc.addPage(); // Indice reservado
                 doc.addPage();
                 const paginaInicioHistorico = doc.internal.getNumberOfPages();
                 
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
-                doc.text("1. Registro Histórico de Inspecciones", 14, 30);
+                doc.text("1. Registro Histórico de Inspecciones", 14, 30); 
 
+                // Imprimir tal cual los ordenó el usuario
                 const tableData = datosFiltrados.map(r => {
                     const est = obtenerEstadoSemaforo(r.nivel_antes);
-                    return [
-                        r.fid, est.texto, `${r.fecha} ${r.hora}`, r.operador, `${r.nivel_antes} -> ${r.nivel_despues}`, r.observacion
-                    ];
+                    return [r.fid, est.texto, `${r.fecha} ${r.hora}`, r.operador, `${r.nivel_antes} -> ${r.nivel_despues}`, r.observacion];
                 });
 
                 doc.autoTable({
@@ -899,14 +931,10 @@
                     theme: 'striped',
                     headStyles: { fillColor: [30, 58, 138] },
                     styles: { fontSize: 7.5, font: 'helvetica' },
-                    columnStyles: { 
-                        1: { fontStyle: 'bold' },
-                        5: { cellWidth: 55 } 
-                    },
+                    columnStyles: { 1: { fontStyle: 'bold' }, 5: { cellWidth: 55 } },
                     margin: { top: 30, bottom: 20 }
                 });
 
-                // PÁGINA X: GRÁFICO
                 doc.addPage();
                 const paginaInicioGrafico = doc.internal.getNumberOfPages();
                 
@@ -915,16 +943,23 @@
                 
                 const canvas = document.getElementById('graficoNiveles');
                 if (canvas) {
+                    // Fuerza temporalmente el fondo blanco para el PDF
+                    graficoInstancia.options.plugins.fondoBlanco = true;
+                    graficoInstancia.update('none'); // Update sin animación
+                    
                     const chartBase64 = canvas.toDataURL('image/jpeg', 1.0);
                     dibujarImagenConRatio(doc, chartBase64, 14, 40, 182, 110, 'center');
+                    
+                    // Restaura estado para la web
+                    graficoInstancia.options.plugins.fondoBlanco = false;
+                    graficoInstancia.update('none');
                 }
 
-                // PÁGINAS Y+: FICHAS
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
-                const registrosCronologicos = [...datosFiltrados].reverse();
 
-                for (let i = 0; i < registrosCronologicos.length; i++) {
-                    const reg = registrosCronologicos[i];
+                // Las fichas se imprimen cronologicamente por seguridad
+                for (let i = 0; i < datosOrdenados.length; i++) {
+                    const reg = datosOrdenados[i];
                     document.getElementById('pdfOverlayText').textContent = `Agregando Ficha ${i+1} de ${totalFichas}...`;
                     doc.addPage();
                     await generarPaginaFicha(doc, reg, 35); 
@@ -934,17 +969,14 @@
 
                 for (let i = 1; i <= paginasTotales; i++) {
                     doc.setPage(i);
-                    const esPortada = (i === 1);
-                    dibujarPieYEncabezado(doc, i, paginasTotales, esPortada);
+                    dibujarPieYEncabezado(doc, i, paginasTotales, (i === 1));
                 }
 
-                // RELLENAR ÍNDICE
                 doc.setPage(2);
                 doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(30, 58, 138);
                 doc.text("Índice de Contenidos", 14, 45);
 
                 doc.setFont("helvetica", "normal"); doc.setFontSize(12); doc.setTextColor(50);
-                
                 const lider = " ....................................................................................................... ";
                 
                 const printIndexLine = (num, title, pageY, targetPage) => {
