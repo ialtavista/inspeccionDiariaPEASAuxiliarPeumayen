@@ -68,12 +68,13 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"> Inspección diaria <span class="text-blue-600">PEAS Auxiliar Peumayén</span></h1>
                 <p class="text-xs sm:text-sm text-slate-500 font-medium">Plataforma de Reportes Dinámicos - Ingeniería AVAS SpA</p>
             </div>
-            <!-- NUEVO BOTÓN DE TUTORIAL -->
-            <button onclick="iniciarTutorial(true)" class="ml-2 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded-full transition-colors" title="Ver Tutorial nuevamente">
+            <!-- BOTÓN DE TUTORIAL CON ID -->
+            <button id="btnAyudaTutorial" onclick="iniciarTutorial(true)" class="ml-2 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded-full transition-colors border border-slate-100 shadow-sm" title="Ver Tutorial nuevamente">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </button>
         </div>
-        <button onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
+        <!-- BOTÓN DESCARGAR REPORTE CON ID -->
+        <button id="btnDescargarReporte" onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             Descargar Reporte histórico PDF
         </button>
@@ -272,6 +273,9 @@
         // ==========================================
         // MOTOR DEL TUTORIAL GUIADO
         // ==========================================
+        // ==========================================
+        // MOTOR DEL TUTORIAL GUIADO
+        // ==========================================
         function iniciarTutorial(forzarRepeticion = false) {
             // Verificar si el usuario ya vio el tutorial
             const tutorialVisto = localStorage.getItem('avas_tutorial_peas');
@@ -313,8 +317,12 @@
                         popover: { title: 'Gráfico y Lluvias', description: 'Observa la evolución del pozo respecto al límite de 3 metros y cruza los datos con la lluvia caída. Pasa el ratón sobre los puntos para ver el detalle exacto.' } 
                     },
                     { 
-                        element: 'header button', 
-                        popover: { title: 'Reporte Gerencial Maestro', description: 'Este botón generará un documento PDF consolidado con todos los datos y fotos que estés filtrando actualmente en pantalla. ¡Estás listo para comenzar!' } 
+                        element: '#btnDescargarReporte', // Selector corregido por ID
+                        popover: { title: 'Reporte Gerencial Maestro', description: 'Este botón generará un documento PDF consolidado con todos los datos y fotos que estés filtrando actualmente en pantalla.' } 
+                    },
+                    { 
+                        element: '#btnAyudaTutorial', // Nuevo paso para el botón de ayuda
+                        popover: { title: '¿Necesitas repasar?', description: 'Si en algún momento tienes dudas sobre cómo usar la plataforma, puedes hacer clic en este botón para repetir este recorrido guiado. ¡Estás listo para comenzar!' } 
                     }
                 ],
                 onDestroyStarted: () => {
