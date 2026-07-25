@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inspección diaria PEAS Auxiliar Peumayén</title>
-    <!-- Chart.js para el Gráfico -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Adaptador de tiempo real para Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
     <!-- Tailwind CSS para Diseño Responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,8 +12,9 @@
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
     
-    <!-- Chart.js para el Gráfico -->
+    <!-- Chart.js para el Gráfico y Adaptador de Tiempo -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
     <!-- jsPDF y autoTable para la exportación profesional a PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -120,7 +117,6 @@
                     </h2>
                 </div>
                 
-                <!-- REEMPLAZAR DENTRO DE FICHA DETALLE -->
                 <div class="bg-slate-50 p-4 rounded-lg mb-4 grid grid-cols-2 gap-y-3 gap-x-4 text-sm relative">
                     <!-- Badge del Semáforo posicionado arriba a la derecha -->
                     <div class="absolute top-4 right-4">
@@ -217,7 +213,7 @@
                             </tr>
                         </thead>
                         <tbody id="tablaCuerpo" class="divide-y divide-slate-100 text-slate-700">
-                            <tr><td colspan="5" class="p-4 text-center">Cargando datos desde Google Sheets...</td></tr>
+                            <tr><td colspan="6" class="p-4 text-center">Cargando datos desde Google Sheets...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -244,7 +240,6 @@
         // ==========================================
         // CONFIGURACIÓN DEL LOGO AVAS SpA
         // ==========================================
-        // El sistema buscará tu archivo adjunto. Asegúrate de subir 'LogoAvas.jpg' junto al index.html en GitHub.
         const URL_LOGO_EMPRESA = 'LogoAvas.jpg'; 
         
         let cachedLogoBase64 = null; 
@@ -271,23 +266,24 @@
 
         function parseFecha(fechaStr) {
             if (!fechaStr) return new Date(0);
-            const parts = fechaStr.split(/[-/]/);
+            const parts = String(fechaStr).split(/[-/]/);
             if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
             return new Date(fechaStr);
         }
 
         function parseFechaHora(fechaStr, horaStr) {
-            const parts = fechaStr.split(/[-/]/);
+            const parts = String(fechaStr).split(/[-/]/);
             let d = new Date();
             if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
             else d = new Date(fechaStr);
             
             if (horaStr) {
-                const hParts = horaStr.split(':');
+                const hParts = String(horaStr).split(':');
                 if(hParts.length >= 2) d.setHours(parseInt(hParts[0], 10), parseInt(hParts[1], 10), 0, 0);
             }
             return d;
         }
+
         async function obtenerDatos(silencioso = false) {
             try {
                 const response = await fetch(GVIZ_URL);
@@ -299,28 +295,36 @@
             } catch (error) {
                 console.error("Error al obtener datos:", error);
                 if (!silencioso) {
-                    document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos.</td></tr>`;
+                    document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos. Revisa la consola para más detalles.</td></tr>`;
                 }
             }
         }
 
+        // Función Reforzada para manejar celdas vacías o nulas
         function procesarDatos(table, silencioso = false) {
-            // Guardamos el estado de lo que el usuario está mirando actualmente
-            const fichaActual = document.getElementById('selectorFicha').value;
+            const fichaActualElement = document.getElementById('selectorFicha');
+            const fichaActual = fichaActualElement ? fichaActualElement.value : null;
             const tablaContainer = document.querySelector('.custom-scrollbar');
             const scrollPos = tablaContainer ? tablaContainer.scrollTop : 0;
 
             registrosGlobales = [];
+            
             const cols = table.cols.map(col => col.label ? col.label.trim().toLowerCase() : '');
             
             table.rows.forEach(row => {
                 const filaData = {};
-                row.c.forEach((cell, index) => {
-                    const colName = cols[index];
-                    if (colName) filaData[colName] = cell ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
-                });
+                // Asegurarse de que row.c existe
+                if(row.c) {
+                    row.c.forEach((cell, index) => {
+                        const colName = cols[index];
+                        if (colName) {
+                            // Manejo seguro de celdas nulas (null) que envía Sheets cuando está vacío
+                            filaData[colName] = (cell && cell !== null) ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
+                        }
+                    });
+                }
                 
-                if (filaData.fid !== undefined && filaData.fid !== '') {
+                if (filaData.fid !== undefined && filaData.fid !== '' && filaData.fid !== null) {
                     registrosGlobales.push({
                         fid: String(filaData.fid),
                         fecha: String(filaData.fecha || ''),
@@ -340,15 +344,13 @@
             actualizarSelectorFichas(); 
             
             if (silencioso) {
-                // Restauramos suavemente la vista para no interrumpir al usuario
                 if (fichaActual && registrosGlobales.some(r => r.fid === fichaActual)) {
                     document.getElementById('selectorFicha').value = fichaActual;
                     cambiarFicha(fichaActual);
                 }
-                cambiarModoFiltro(); // Reaplica el filtro de la tabla actual y redibuja
-                if (tablaContainer) tablaContainer.scrollTop = scrollPos; // Restaura el scroll
+                cambiarModoFiltro(); 
+                if (tablaContainer) tablaContainer.scrollTop = scrollPos; 
             } else {
-                // Carga inicial
                 aplicarFiltroRapido('10'); 
             }
         }
@@ -356,11 +358,7 @@
         // ==========================================
         // MOTOR DEL TUTORIAL GUIADO
         // ==========================================
-        // ==========================================
-        // MOTOR DEL TUTORIAL GUIADO
-        // ==========================================
         function iniciarTutorial(forzarRepeticion = false) {
-            // Verificar si el usuario ya vio el tutorial
             const tutorialVisto = localStorage.getItem('avas_tutorial_peas');
             if (tutorialVisto === 'true' && !forzarRepeticion) return;
 
@@ -400,60 +398,21 @@
                         popover: { title: 'Gráfico y Lluvias', description: 'Observa la evolución del pozo respecto al límite de 3 metros y cruza los datos con la lluvia caída. Pasa el ratón sobre los puntos para ver el detalle exacto.' } 
                     },
                     { 
-                        element: '#btnDescargarReporte', // Selector corregido por ID
+                        element: '#btnDescargarReporte',
                         popover: { title: 'Reporte Gerencial Maestro', description: 'Este botón generará un documento PDF consolidado con todos los datos y fotos que estés filtrando actualmente en pantalla.' } 
                     },
                     { 
-                        element: '#btnAyudaTutorial', // Nuevo paso para el botón de ayuda
+                        element: '#btnAyudaTutorial',
                         popover: { title: '¿Necesitas repasar?', description: 'Si en algún momento tienes dudas sobre cómo usar la plataforma, puedes hacer clic en este botón para repetir este recorrido guiado. ¡Estás listo para comenzar!' } 
                     }
                 ],
                 onDestroyStarted: () => {
-                    // Si el usuario cierra el tutorial o lo termina, marcamos el caché como visto
                     localStorage.setItem('avas_tutorial_peas', 'true');
                     driverObj.destroy();
                 }
             });
 
             driverObj.drive();
-        }
-
-        function procesarDatos(table) {
-            registrosGlobales = [];
-            
-            // Mapeamos las columnas basándonos en las etiquetas que definiste en el Google Sheet
-            const cols = table.cols.map(col => col.label ? col.label.trim().toLowerCase() : '');
-            
-            table.rows.forEach(row => {
-                const filaData = {};
-                row.c.forEach((cell, index) => {
-                    const colName = cols[index];
-                    if (colName) {
-                        // Extraemos el valor de la celda (formateado o valor crudo)
-                        filaData[colName] = cell ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
-                    }
-                });
-                
-                // Verificamos si la fila tiene un FID válido para procesarla
-                if (filaData.fid !== undefined && filaData.fid !== '') {
-                    registrosGlobales.push({
-                        fid: String(filaData.fid),
-                        fecha: String(filaData.fecha || ''),
-                        hora: String(filaData.hora || ''),
-                        nivel_antes: parseFloat(filaData.nivel_antes) || 0,
-                        nivel_despues: parseFloat(filaData.nivel_despues) || 0,
-                        lluvia: parseFloat(filaData.lluvia) || 0,
-                        operador: String(filaData.operador || 'No asignado'),
-                        observacion: String(filaData.observacion || 'Sin observaciones'),
-                        foto_antes: String(filaData.foto_antes || ''),
-                        foto_despues: String(filaData.foto_despues || '')
-                    });
-                }
-            });
-
-            registrosGlobales.reverse(); 
-            actualizarSelectorFichas(); 
-            aplicarFiltroRapido('10'); 
         }
         
         function actualizarSelectorFichas() {
@@ -467,7 +426,6 @@
                 selector.appendChild(option);
             });
 
-            // Seleccionar por defecto la más reciente al cargar
             if (registrosGlobales.length > 0) {
                 cambiarFicha(registrosGlobales[0].fid);
                 document.getElementById('fichaDetalle').classList.remove('hidden');
@@ -621,7 +579,7 @@
                             borderColor: '#38bdf8',
                             borderWidth: 1,
                             yAxisID: 'yLluvia',
-                            barPercentage: 0.5 // Hace que las barras de lluvia no se sobrepongan
+                            barPercentage: 0.5 
                         },
                         {
                             label: 'Nivel Hallado (m)',
@@ -684,12 +642,12 @@
                             grid: { drawOnChartArea: false }, suggestedMax: 30
                         },
                         x: {
-                            type: 'time', // MOTOR DE TIEMPO REAL ACTIVADO
+                            type: 'time',
                             time: {
                                 tooltipFormat: 'dd/MM/yyyy HH:mm',
                                 displayFormats: { day: 'dd MMM', hour: 'HH:mm' }
                             },
-                            offset: true, // Previene que las barras se corten en los bordes
+                            offset: true,
                             grid: { display: false },
                             ticks: { maxTicksLimit: 8, font: {family: 'Inter', size: 10} }
                         }
@@ -710,33 +668,11 @@
             return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
         }
 
-        function cambiarFicha(fid) {
-            // Ahora busca en registrosGlobales para encontrar cualquier ficha existente
-            const registro = registrosGlobales.find(r => r.fid === String(fid));
-            if (!registro) return;
-
-            document.getElementById('detFid').textContent = registro.fid;
-            document.getElementById('detFechaHora').textContent = `${registro.fecha} - ${registro.hora}`;
-            document.getElementById('detObs').textContent = registro.observacion;
-            document.getElementById('detNivelAntes').textContent = registro.nivel_antes;
-            document.getElementById('detNivelDespues').textContent = registro.nivel_despues;
-
-            const imgAntes = document.getElementById('detFotoAntes');
-            const imgDespues = document.getElementById('detFotoDespues');
-
-            const urlAntes = getDirectImageUrl(registro.foto_antes);
-            const urlDespues = getDirectImageUrl(registro.foto_despues);
-
-            imgAntes.src = urlAntes || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" fill="%2394a3b8" font-family="sans-serif">Sin Imagen</text></svg>';
-            imgDespues.src = urlDespues || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" fill="%2394a3b8" font-family="sans-serif">Sin Imagen</text></svg>';
-        }
-
         async function obtenerImagenBase64Segura(urlOriginal) {
             if (!urlOriginal) return null;
             const id = getDriveId(urlOriginal);
             let finalUrl = urlOriginal;
             
-            // Si es un link de Drive, lo forzamos a través del CDN optimizador
             if (id) {
                 finalUrl = `https://wsrv.nl/?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${id}`)}&output=jpg&q=80`;
             }
@@ -797,7 +733,6 @@
                     
                     let offsetY = yBase + (boxHeight - finalH) / 2;
                     
-                    // Identifica automáticamente si es JPG o PNG para evitar errores
                     let imgFormat = 'JPEG';
                     if (base64Data.match(/data:image\/png/i)) imgFormat = 'PNG';
                     else if (base64Data.match(/data:image\/webp/i)) imgFormat = 'WEBP';
@@ -812,7 +747,6 @@
         }
 
         function manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo) {
-            // Si el logo no cargó, escribe el nombre elegantemente. Si es una foto, muestra "Sin Imagen".
             if (esLogo) {
                 doc.setFontSize(14); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
                 doc.text("Ingeniería AVAS SpA", xBase, yBase + boxHeight/2 + 2);
@@ -824,15 +758,13 @@
         }
 
         function dibujarPieYEncabezado(doc, numeroPagina, totalPaginas, esPortada = false) {
-            // Encabezado (Logo) en páginas que no sean la portada
             if (!esPortada) {
                 dibujarImagenConRatio(doc, cachedLogoBase64, 14, 8, 40, 15, 'left', true);
             }
 
-            // Pie de Página
             const pageHeight = doc.internal.pageSize.height;
             doc.setDrawColor(200, 200, 200);
-            doc.line(14, pageHeight - 12, 196, pageHeight - 12); // Línea separadora
+            doc.line(14, pageHeight - 12, 196, pageHeight - 12); 
             
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
@@ -848,7 +780,6 @@
             doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
             doc.text(`Ficha de Inspección Detallada - FID: ${registro.fid}`, 14, yBaseOffset);
             
-            // Dibujar Semáforo en PDF
             const estado = obtenerEstadoSemaforo(registro.nivel_antes);
             doc.setFillColor(...estado.pdfBg);
             doc.roundedRect(165, yBaseOffset - 5, 31, 7, 2, 2, 'F');
@@ -857,7 +788,7 @@
             
             doc.setFillColor(241, 245, 249);
             doc.setDrawColor(203, 213, 225);
-            doc.roundedRect(14, yBaseOffset + 5, 182, 40, 3, 3, 'FD'); // Altura aumentada
+            doc.roundedRect(14, yBaseOffset + 5, 182, 40, 3, 3, 'FD'); 
             
             doc.setFontSize(10); doc.setTextColor(71, 85, 105);
             doc.setFont("helvetica", "bold");
@@ -882,7 +813,7 @@
             const splitObs = doc.splitTextToSize(registro.observacion || '-', 135);
             doc.text(splitObs, 45, yBaseOffset + 26);
 
-            let yFotos = yBaseOffset + 53; // Ajustado por la altura
+            let yFotos = yBaseOffset + 53; 
             doc.setFont("helvetica", "bold");
             doc.text("Registro Fotográfico Inicial", 55, yFotos, { align: "center" });
             doc.text("Registro Fotográfico Final", 155, yFotos, { align: "center" });
@@ -898,7 +829,6 @@
         async function descargarFichaActual() {
             const selector = document.getElementById('selectorFicha');
             const fid = selector.value;
-            // Busca en todos los registros globales, no solo en los filtrados
             const registro = registrosGlobales.find(r => r.fid === String(fid));
             
             if (!registro) return alert("Selecciona una inspección.");
@@ -908,7 +838,6 @@
             try {
                 const doc = new jsPDF();
                 
-                // Offset Y de 35 para dar espacio al logo del encabezado
                 await generarPaginaFicha(doc, registro, 35);
                 
                 dibujarPieYEncabezado(doc, 1, 1, false);
@@ -931,9 +860,7 @@
                 const doc = new jsPDF();
                 const totalFichas = datosFiltrados.length;
                 
-                // ==========================================
                 // PÁGINA 1: PORTADA
-                // ==========================================
                 dibujarImagenConRatio(doc, cachedLogoBase64, 105 - 35, 30, 70, 30, 'center', true);
                 
                 doc.setFontSize(26); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
@@ -948,19 +875,15 @@
                 doc.text(`Total Registros Procesados: ${totalFichas}`, 105, 140, { align: "center" });
                 doc.text(`Elaborado por Ingeniería AVAS SpA`, 105, 150, { align: "center" });
                 
-                // ==========================================
-                // PÁGINA 2: ÍNDICE (Reservada)
-                // ==========================================
+                // PÁGINA 2: ÍNDICE
                 doc.addPage();
                 
-                // ==========================================
                 // PÁGINA 3+: REGISTRO HISTÓRICO
-                // ==========================================
                 doc.addPage();
                 const paginaInicioHistorico = doc.internal.getNumberOfPages();
                 
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
-                doc.text("1. Registro Histórico de Inspecciones", 14, 30); // Y en 30 por encabezado
+                doc.text("1. Registro Histórico de Inspecciones", 14, 30);
 
                 const tableData = datosFiltrados.map(r => {
                     const est = obtenerEstadoSemaforo(r.nivel_antes);
@@ -983,9 +906,7 @@
                     margin: { top: 30, bottom: 20 }
                 });
 
-                // ==========================================
                 // PÁGINA X: GRÁFICO
-                // ==========================================
                 doc.addPage();
                 const paginaInicioGrafico = doc.internal.getNumberOfPages();
                 
@@ -994,14 +915,11 @@
                 
                 const canvas = document.getElementById('graficoNiveles');
                 if (canvas) {
-                    // Extraemos directamente, el plugin "fondoBlanco" de ChartJS asegura que no haya transparencias negras
                     const chartBase64 = canvas.toDataURL('image/jpeg', 1.0);
                     dibujarImagenConRatio(doc, chartBase64, 14, 40, 182, 110, 'center');
                 }
 
-                // ==========================================
                 // PÁGINAS Y+: FICHAS
-                // ==========================================
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
                 const registrosCronologicos = [...datosFiltrados].reverse();
 
@@ -1009,23 +927,18 @@
                     const reg = registrosCronologicos[i];
                     document.getElementById('pdfOverlayText').textContent = `Agregando Ficha ${i+1} de ${totalFichas}...`;
                     doc.addPage();
-                    await generarPaginaFicha(doc, reg, 35); // YOffset a 35 por encabezado
+                    await generarPaginaFicha(doc, reg, 35); 
                 }
 
                 const paginasTotales = doc.internal.getNumberOfPages();
 
-                // ==========================================
-                // GENERADOR DE ENCABEZADOS Y PIES (Aplicar a Todo)
-                // ==========================================
                 for (let i = 1; i <= paginasTotales; i++) {
                     doc.setPage(i);
                     const esPortada = (i === 1);
                     dibujarPieYEncabezado(doc, i, paginasTotales, esPortada);
                 }
 
-                // ==========================================
-                // RELLENAR ÍNDICE EN LA PÁGINA 2
-                // ==========================================
+                // RELLENAR ÍNDICE
                 doc.setPage(2);
                 doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(30, 58, 138);
                 doc.text("Índice de Contenidos", 14, 45);
@@ -1034,7 +947,6 @@
                 
                 const lider = " ....................................................................................................... ";
                 
-                // Formateador visual sencillo para el índice
                 const printIndexLine = (num, title, pageY, targetPage) => {
                     doc.setFont("helvetica", "bold"); doc.text(`${num}.`, 14, pageY);
                     doc.setFont("helvetica", "normal"); doc.text(`${title}`, 22, pageY);
@@ -1046,7 +958,6 @@
                 printIndexLine("2", "Evolución Gráfica de Niveles", 80, paginaInicioGrafico);
                 printIndexLine("3", "Fichas de Inspección Fotográfica", 95, paginaInicioFichas);
 
-                // Guardado Final
                 doc.save(`Reporte_PEAS_${fInicio}_al_${fFin}.pdf`);
 
             } catch (error) {
