@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inspección diaria PEAS Auxiliar Peumayén</title>
-    
+    <!-- Chart.js para el Gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Adaptador de tiempo real para Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
     <!-- Tailwind CSS para Diseño Responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -66,7 +70,17 @@
             </div>
             <div>
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"> Inspección diaria <span class="text-blue-600">PEAS Auxiliar Peumayén</span></h1>
-                <p class="text-xs sm:text-sm text-slate-500 font-medium">Plataforma de Reportes Dinámicos - Ingeniería AVAS SpA</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Plataforma de Reportes Dinámicos - Ingeniería AVAS SpA</p>
+                    <!-- INDICADOR EN VIVO (Auto-Refresh) -->
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        En Vivo
+                    </span>
+                </div>
             </div>
             <!-- BOTÓN DE TUTORIAL CON ID -->
             <button id="btnAyudaTutorial" onclick="iniciarTutorial(true)" class="ml-2 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded-full transition-colors border border-slate-100 shadow-sm" title="Ver Tutorial nuevamente">
@@ -247,6 +261,12 @@
             setTimeout(() => {
                 iniciarTutorial(false);
             }, 1000);
+
+            // Iniciar Auto-Refresh cada 3 minutos (180000 milisegundos)
+            setInterval(() => {
+                console.log("Actualizando datos en segundo plano...");
+                obtenerDatos(true); // true = modo silencioso
+            }, 180000);
         };
 
         function parseFecha(fechaStr) {
@@ -256,17 +276,80 @@
             return new Date(fechaStr);
         }
 
-        async function obtenerDatos() {
+        function parseFechaHora(fechaStr, horaStr) {
+            const parts = fechaStr.split(/[-/]/);
+            let d = new Date();
+            if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
+            else d = new Date(fechaStr);
+            
+            if (horaStr) {
+                const hParts = horaStr.split(':');
+                if(hParts.length >= 2) d.setHours(parseInt(hParts[0], 10), parseInt(hParts[1], 10), 0, 0);
+            }
+            return d;
+        }
+        async function obtenerDatos(silencioso = false) {
             try {
                 const response = await fetch(GVIZ_URL);
                 const text = await response.text();
                 const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
                 const jsonData = JSON.parse(jsonString);
 
-                procesarDatos(jsonData.table);
+                procesarDatos(jsonData.table, silencioso);
             } catch (error) {
                 console.error("Error al obtener datos:", error);
-                document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos.</td></tr>`;
+                if (!silencioso) {
+                    document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos.</td></tr>`;
+                }
+            }
+        }
+
+        function procesarDatos(table, silencioso = false) {
+            // Guardamos el estado de lo que el usuario está mirando actualmente
+            const fichaActual = document.getElementById('selectorFicha').value;
+            const tablaContainer = document.querySelector('.custom-scrollbar');
+            const scrollPos = tablaContainer ? tablaContainer.scrollTop : 0;
+
+            registrosGlobales = [];
+            const cols = table.cols.map(col => col.label ? col.label.trim().toLowerCase() : '');
+            
+            table.rows.forEach(row => {
+                const filaData = {};
+                row.c.forEach((cell, index) => {
+                    const colName = cols[index];
+                    if (colName) filaData[colName] = cell ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
+                });
+                
+                if (filaData.fid !== undefined && filaData.fid !== '') {
+                    registrosGlobales.push({
+                        fid: String(filaData.fid),
+                        fecha: String(filaData.fecha || ''),
+                        hora: String(filaData.hora || ''),
+                        nivel_antes: parseFloat(filaData.nivel_antes) || 0,
+                        nivel_despues: parseFloat(filaData.nivel_despues) || 0,
+                        lluvia: parseFloat(filaData.lluvia) || 0,
+                        operador: String(filaData.operador || 'No asignado'),
+                        observacion: String(filaData.observacion || 'Sin observaciones'),
+                        foto_antes: String(filaData.foto_antes || ''),
+                        foto_despues: String(filaData.foto_despues || '')
+                    });
+                }
+            });
+
+            registrosGlobales.reverse(); 
+            actualizarSelectorFichas(); 
+            
+            if (silencioso) {
+                // Restauramos suavemente la vista para no interrumpir al usuario
+                if (fichaActual && registrosGlobales.some(r => r.fid === fichaActual)) {
+                    document.getElementById('selectorFicha').value = fichaActual;
+                    cambiarFicha(fichaActual);
+                }
+                cambiarModoFiltro(); // Reaplica el filtro de la tabla actual y redibuja
+                if (tablaContainer) tablaContainer.scrollTop = scrollPos; // Restaura el scroll
+            } else {
+                // Carga inicial
+                aplicarFiltroRapido('10'); 
             }
         }
 
@@ -507,18 +590,13 @@
             const ctx = document.getElementById('graficoNiveles').getContext('2d');
             const datosGrafico = [...datosFiltrados].reverse(); 
 
-            const labels = datosGrafico.map(r => `${r.fecha.substring(0,5)}`);
-            const dataAntes = datosGrafico.map(r => r.nivel_antes);
-            
-            // Dataset constante para el límite de profundidad (3 metros)
-            const dataLimite = datosGrafico.map(() => 3.0);
-            
-            // AHORA TOMA EL DATO REAL DE TU GOOGLE SHEETS
-            const dataLluvia = datosGrafico.map(r => r.lluvia); 
+            // Transformamos los datos a formato coordenado { x: FechaReal, y: Valor }
+            const dataAntes = datosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
+            const dataLimite = datosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
+            const dataLluvia = datosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia })); 
 
             if (graficoInstancia) graficoInstancia.destroy();
 
-            // Plugin Oficial para forzar fondo blanco (Soluciona el bug del PDF)
             const pluginFondoBlanco = {
                 id: 'fondoBlanco',
                 beforeDraw: (chart) => {
@@ -534,24 +612,24 @@
             graficoInstancia = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
                     datasets: [
                         {
                             label: 'Precipitación (mm)',
                             type: 'bar',
                             data: dataLluvia,
-                            backgroundColor: 'rgba(56, 189, 248, 0.4)', // Celeste semitransparente
+                            backgroundColor: 'rgba(56, 189, 248, 0.4)',
                             borderColor: '#38bdf8',
                             borderWidth: 1,
-                            yAxisID: 'yLluvia' // Se ancla al eje secundario
+                            yAxisID: 'yLluvia',
+                            barPercentage: 0.5 // Hace que las barras de lluvia no se sobrepongan
                         },
                         {
                             label: 'Nivel Hallado (m)',
                             data: dataAntes,
-                            borderColor: '#3b82f6', // Azul corporativo
+                            borderColor: '#3b82f6',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             borderWidth: 2,
-                            tension: 0.3, // Curvas suaves
+                            tension: 0.3,
                             fill: true,
                             pointBackgroundColor: '#1e40af',
                             pointBorderColor: '#ffffff',
@@ -562,30 +640,26 @@
                         {
                             label: 'Límite Pozo (3m)',
                             data: dataLimite,
-                            borderColor: '#ef4444', // Rojo alerta
+                            borderColor: '#ef4444',
                             borderWidth: 2,
-                            borderDash: [5, 5], // Línea punteada
-                            pointRadius: 0, // Sin puntos para que parezca una cota constante
+                            borderDash: [5, 5],
+                            pointRadius: 0,
                             fill: false,
                             yAxisID: 'yNivel'
                         }
                     ]
                 },
-                plugins: [pluginFondoBlanco], // Activamos el fondo blanco
+                plugins: [pluginFondoBlanco],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { 
-                            display: true, 
-                            position: 'top',
-                            labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true }
-                        },
+                        legend: { display: true, position: 'top', labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true } },
                         tooltip: {
                             backgroundColor: 'rgba(15, 23, 42, 0.95)',
                             callbacks: {
                                 label: function(context) {
-                                    if (context.datasetIndex === 0) return ` Precipitación: ${context.raw} mm`;
+                                    if (context.datasetIndex === 0) return ` Precipitación: ${context.raw.y} mm`;
                                     if (context.datasetIndex === 1) {
                                         const reg = datosGrafico[context.dataIndex];
                                         return [
@@ -600,24 +674,24 @@
                     },
                     scales: {
                         yNivel: { 
-                            type: 'linear',
-                            position: 'left',
-                            beginAtZero: true, 
+                            type: 'linear', position: 'left', beginAtZero: true, 
                             title: { display: true, text: 'Nivel del Pozo (m)', font: {family: 'Inter', size: 11} },
-                            grid: { color: '#f1f5f9' },
-                            suggestedMax: 3.5 // Da un margen visual sobre la línea de 3m
+                            grid: { color: '#f1f5f9' }, suggestedMax: 3.5 
                         },
                         yLluvia: {
-                            type: 'linear',
-                            position: 'right',
-                            beginAtZero: true,
+                            type: 'linear', position: 'right', beginAtZero: true,
                             title: { display: true, text: 'Lluvia Caída (mm)', font: {family: 'Inter', size: 11}, color: '#0284c7' },
-                            grid: { drawOnChartArea: false }, // Evita que las líneas de grilla se crucen
-                            suggestedMax: 30
+                            grid: { drawOnChartArea: false }, suggestedMax: 30
                         },
                         x: {
+                            type: 'time', // MOTOR DE TIEMPO REAL ACTIVADO
+                            time: {
+                                tooltipFormat: 'dd/MM/yyyy HH:mm',
+                                displayFormats: { day: 'dd MMM', hour: 'HH:mm' }
+                            },
+                            offset: true, // Previene que las barras se corten en los bordes
                             grid: { display: false },
-                            ticks: { maxTicksLimit: 10, font: {family: 'Inter', size: 10} }
+                            ticks: { maxTicksLimit: 8, font: {family: 'Inter', size: 10} }
                         }
                     }
                 }
