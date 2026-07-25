@@ -243,7 +243,43 @@
             }
         }
 
-        
+        function procesarDatos(table) {
+            registrosGlobales = [];
+            
+            // Mapeamos las columnas basándonos en las etiquetas que definiste en el Google Sheet
+            const cols = table.cols.map(col => col.label ? col.label.trim().toLowerCase() : '');
+            
+            table.rows.forEach(row => {
+                const filaData = {};
+                row.c.forEach((cell, index) => {
+                    const colName = cols[index];
+                    if (colName) {
+                        // Extraemos el valor de la celda (formateado o valor crudo)
+                        filaData[colName] = cell ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
+                    }
+                });
+                
+                // Verificamos si la fila tiene un FID válido para procesarla
+                if (filaData.fid !== undefined && filaData.fid !== '') {
+                    registrosGlobales.push({
+                        fid: String(filaData.fid),
+                        fecha: String(filaData.fecha || ''),
+                        hora: String(filaData.hora || ''),
+                        nivel_antes: parseFloat(filaData.nivel_antes) || 0,
+                        nivel_despues: parseFloat(filaData.nivel_despues) || 0,
+                        lluvia: parseFloat(filaData.lluvia) || 0,
+                        operador: String(filaData.operador || 'No asignado'),
+                        observacion: String(filaData.observacion || 'Sin observaciones'),
+                        foto_antes: String(filaData.foto_antes || ''),
+                        foto_despues: String(filaData.foto_despues || '')
+                    });
+                }
+            });
+
+            registrosGlobales.reverse(); 
+            actualizarSelectorFichas(); 
+            aplicarFiltroRapido('10'); 
+        }
         
         function actualizarSelectorFichas() {
             const selector = document.getElementById('selectorFicha');
