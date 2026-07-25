@@ -7,6 +7,10 @@
     
     <!-- Tailwind CSS para Diseño Responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Driver.js para el Tutorial Guiado -->
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
     
     <!-- Chart.js para el Gráfico -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -64,6 +68,10 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"> Inspección diaria <span class="text-blue-600">PEAS Auxiliar Peumayén</span></h1>
                 <p class="text-xs sm:text-sm text-slate-500 font-medium">Plataforma de Reportes Dinámicos - Ingeniería AVAS SpA</p>
             </div>
+            <!-- NUEVO BOTÓN DE TUTORIAL -->
+            <button onclick="iniciarTutorial(true)" class="ml-2 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-2 rounded-full transition-colors" title="Ver Tutorial nuevamente">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </button>
         </div>
         <button onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -232,8 +240,12 @@
 
         window.onload = async () => {
             await obtenerDatos();
-            // Precargamos el logo en el fondo para que esté listo al exportar PDFs
             obtenerLogoBase64().then(b64 => cachedLogoBase64 = b64);
+            
+            // Iniciar tutorial 1 segundo después de cargar los datos
+            setTimeout(() => {
+                iniciarTutorial(false);
+            }, 1000);
         };
 
         function parseFecha(fechaStr) {
@@ -255,6 +267,64 @@
                 console.error("Error al obtener datos:", error);
                 document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos.</td></tr>`;
             }
+        }
+
+        // ==========================================
+        // MOTOR DEL TUTORIAL GUIADO
+        // ==========================================
+        function iniciarTutorial(forzarRepeticion = false) {
+            // Verificar si el usuario ya vio el tutorial
+            const tutorialVisto = localStorage.getItem('avas_tutorial_peas');
+            if (tutorialVisto === 'true' && !forzarRepeticion) return;
+
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true,
+                animate: true,
+                doneBtnText: 'Entendido',
+                nextBtnText: 'Siguiente',
+                prevBtnText: 'Anterior',
+                progressText: 'Paso {{current}} de {{total}}',
+                steps: [
+                    { 
+                        popover: { 
+                            title: '¡Bienvenido a la Plataforma!', 
+                            description: 'Haremos un recorrido muy rápido para mostrarte cómo aprovechar todas las herramientas de este panel.' 
+                        } 
+                    },
+                    { 
+                        element: '#selectorFicha', 
+                        popover: { title: 'Buscador de Inspecciones', description: 'Aquí puedes desplegar y buscar por fecha o FID cualquier inspección antigua para revisar sus datos y fotos al instante.' } 
+                    },
+                    { 
+                        element: '#fichaDetalle', 
+                        popover: { title: 'Ficha Detallada', description: 'Visualiza el estado del semáforo, el operador de turno, niveles y la evidencia fotográfica. Desde aquí puedes descargar esta ficha específica en PDF.' } 
+                    },
+                    { 
+                        element: '#filtroSelector', 
+                        popover: { title: 'Filtros Inteligentes', description: 'Controla cuánta información ves. Puedes mostrar los últimos 10 o 30 registros, o definir un rango de fechas personalizado.' } 
+                    },
+                    { 
+                        element: '#tablaCuerpo', 
+                        popover: { title: 'Tabla Interactiva', description: 'Revisa el histórico general. ¡Tip pro!: Haz clic en cualquier fila de esta tabla para abrir automáticamente sus detalles en el panel izquierdo.' } 
+                    },
+                    { 
+                        element: '#graficoNiveles', 
+                        popover: { title: 'Gráfico y Lluvias', description: 'Observa la evolución del pozo respecto al límite de 3 metros y cruza los datos con la lluvia caída. Pasa el ratón sobre los puntos para ver el detalle exacto.' } 
+                    },
+                    { 
+                        element: 'header button', 
+                        popover: { title: 'Reporte Gerencial Maestro', description: 'Este botón generará un documento PDF consolidado con todos los datos y fotos que estés filtrando actualmente en pantalla. ¡Estás listo para comenzar!' } 
+                    }
+                ],
+                onDestroyStarted: () => {
+                    // Si el usuario cierra el tutorial o lo termina, marcamos el caché como visto
+                    localStorage.setItem('avas_tutorial_peas', 'true');
+                    driverObj.destroy();
+                }
+            });
+
+            driverObj.drive();
         }
 
         function procesarDatos(table) {
