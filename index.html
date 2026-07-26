@@ -985,29 +985,123 @@
                 drawLegendItem(125, [239, 68, 68], "Crítico", countC, getPct(countC));
 
                 // ==========================================
-                // GRÁFICO PRINCIPAL
+                // GRÁFICO PRINCIPAL (Renderizado Exclusivo para PDF)
                 // ==========================================
-                const canvas = document.getElementById('graficoNiveles');
-                if (canvas) {
-                    // Clonamos el canvas en uno temporal para forzar el fondo blanco SÓLO para el PDF
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = canvas.width;
-                    tempCanvas.height = canvas.height;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    
-                    // Rellenamos de blanco puro
-                    tempCtx.fillStyle = '#ffffff';
-                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                    
-                    // Dibujamos el gráfico web original sobre el fondo blanco
-                    tempCtx.drawImage(canvas, 0, 0);
-                    
-                    // Extraemos la imagen segura en formato JPEG
-                    const chartBase64 = tempCanvas.toDataURL('image/jpeg', 1.0);
-                    
-                    // MODIFICACIÓN: Subimos el eje Y a 130 y aumentamos el alto a 145 para que ocupe todo el ancho
-                    dibujarImagenConRatio(doc, chartBase64, 14, 130, 182, 160, 'center');
-                }
+                // 1. Preparamos los datos cronológicos
+                const datosCronologicosGrafico = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
+                const dataAntes = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
+                const dataLimite = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
+                const dataLluvia = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia }));
+
+                // 2. Creamos un canvas temporal gigante (Relación de aspecto más alta)
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 1800; // Ancho 
+                tempCanvas.height = 1400; // ¡Mucho más alto!
+                tempCanvas.style.display = 'none';
+                document.body.appendChild(tempCanvas);
+                
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // 3. Plugins: Fondo Blanco y Línea de 1 solo dato
+                const pluginFondoBlancoMain = {
+                    id: 'fondoBlancoMain',
+                    beforeDraw: (chart) => {
+                        const ctx = chart.canvas.getContext('2d');
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, chart.width, chart.height);
+                        ctx.restore();
+                    }
+                };
+                
+                const pluginLineaUnicaPDF = {
+                    id: 'lineaUnicaPDF',
+                    afterDraw: (chart) => {
+                        if (chart.data.datasets[0].data.length === 1) {
+                            const ctx = chart.canvas.getContext('2d');
+                            const yAxis = chart.scales.yNivel;
+                            const xAxis = chart.scales.x;
+                            const yPos = yAxis.getPixelForValue(3.0);
+                            ctx.save(); ctx.beginPath();
+                            ctx.moveTo(xAxis.left, yPos); ctx.lineTo(xAxis.right, yPos);
+                            ctx.lineWidth = 4; ctx.strokeStyle = '#ef4444';
+                            ctx.setLineDash([10, 10]); ctx.stroke(); ctx.restore();
+                        }
+                    }
+                };
+
+                // 4. Generamos un Gráfico Master en alta resolución con FUENTES GIGANTES
+                const chartPdf = new Chart(tempCtx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {
+                                label: 'Precipitación (mm)', type: 'bar', data: dataLluvia,
+                                backgroundColor: 'rgba(14, 165, 233, 0.4)', borderColor: '#0ea5e9',
+                                borderWidth: 3, yAxisID: 'yLluvia', barPercentage: 0.5
+                            },
+                            {
+                                label: 'Nivel Hallado (m)', data: dataAntes,
+                                borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 5, tension: 0.3, fill: true,
+                                pointBackgroundColor: '#1e40af', pointBorderColor: '#ffffff',
+                                pointRadius: 7, yAxisID: 'yNivel'
+                            },
+                            {
+                                label: 'Límite Pozo (3m)', data: dataLimite,
+                                borderColor: '#ef4444', borderWidth: 4, borderDash: [10, 10],
+                                pointRadius: 0, fill: false, yAxisID: 'yNivel'
+                            }
+                        ]
+                    },
+                    options: {
+                        devicePixelRatio: 2, // Multiplicador de nitidez (Anti-pixelado)
+                        animation: false,
+                        responsive: false, // Forzamos a que respete los 1800x1400px
+                        plugins: {
+                            legend: { 
+                                display: true, position: 'top', 
+                                labels: { color: '#0f172a', font: { family: 'Inter', size: 28, weight: 'bold' }, usePointStyle: true, padding: 30 } 
+                            },
+                            datalabels: {
+                                display: true, align: 'top', anchor: 'top', color: '#1e40af',
+                                font: { family: 'Inter', size: 22, weight: 'bold' },
+                                formatter: (val, ctx) => {
+                                    const reg = datosCronologicosGrafico[ctx.dataIndex];
+                                    return (ctx.datasetIndex === 1) ? `FID ${reg.fid}` : '';
+                                }
+                            }
+                        },
+                        scales: {
+                            yNivel: { 
+                                type: 'linear', position: 'left', beginAtZero: true, suggestedMax: 3.5,
+                                title: { display: true, text: 'Nivel del Pozo (m)', color: '#0f172a', font: {family: 'Inter', size: 26, weight: 'bold'} },
+                                ticks: { color: '#334155', font: { size: 22, weight: 'bold' } }, grid: { color: '#e2e8f0' }
+                            },
+                            yLluvia: {
+                                type: 'linear', position: 'right', beginAtZero: true, suggestedMax: 30,
+                                title: { display: true, text: 'Lluvia Caída (mm)', color: '#0ea5e9', font: {family: 'Inter', size: 26, weight: 'bold'} },
+                                ticks: { color: '#334155', font: { size: 22, weight: 'bold' } }, grid: { drawOnChartArea: false }
+                            },
+                            x: {
+                                type: 'time', 
+                                time: { displayFormats: { minute: 'dd MMM HH:mm', hour: 'dd MMM HH:mm', day: 'dd MMM' } },
+                                offset: true, grid: { display: false },
+                                ticks: { color: '#334155', maxTicksLimit: 12, font: {family: 'Inter', size: 20, weight: 'bold'} }
+                            }
+                        }
+                    },
+                    plugins: [pluginFondoBlancoMain, pluginLineaUnicaPDF]
+                });
+
+                // 5. Extraemos, estiramos su altura y dibujamos en el PDF
+                const chartBase64 = tempCanvas.toDataURL('image/jpeg', 1.0);
+                chartPdf.destroy();
+                document.body.removeChild(tempCanvas);
+
+                // Dibujamos aprovechando al máximo el espacio: Y=135, Altura=145
+                dibujarImagenConRatio(doc, chartBase64, 14, 135, 182, 145, 'center');
 
                 // FICHAS FOTOGRÁFICAS (Página 5+)
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
