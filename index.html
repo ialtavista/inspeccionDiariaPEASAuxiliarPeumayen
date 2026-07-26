@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inspección diaria PEAS Auxiliar Peumayén</title>
     
+    <!-- Chart.js para el Gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Adaptador de tiempo real para Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- Plugin DataLabels para etiquetar FID en el gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
     <!-- Tailwind CSS (Con Configuración de Dark Mode) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -19,10 +26,6 @@
     <!-- Driver.js para el Tutorial Guiado -->
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
-    
-    <!-- Chart.js para el Gráfico y Adaptador de Tiempo -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
     <!-- jsPDF y autoTable para la exportación profesional a PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -77,6 +80,14 @@
         <p class="text-slate-300 mt-2 text-base text-center max-w-md">Descargando recursos y compilando el documento.<br>Por favor, espera unos instantes.</p>
     </div>
 
+    <!-- MODAL LIGHTBOX PARA FOTOGRAFÍAS -->
+    <div id="lightbox" class="fixed inset-0 z-[200] hidden bg-slate-900/95 backdrop-blur-sm flex-col items-center justify-center p-4 transition-opacity">
+        <button onclick="cerrarLightbox()" class="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors bg-slate-800/50 hover:bg-slate-800 rounded-full p-2 shadow-lg">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <img id="lightboxImg" src="" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-slate-700">
+    </div>
+
     <!-- Cabecera de la Aplicación -->
     <header class="mb-4 lg:mb-6 flex flex-col md:flex-row justify-between items-center bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 gap-4 transition-colors">
         <div class="flex items-center gap-3">
@@ -103,15 +114,16 @@
                     <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                     <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 </button>
-                <!-- BOTÓN DE TUTORIAL -->
+                <!-- BOTÓN DE TUTORIAL CON ID -->
                 <button id="btnAyudaTutorial" onclick="iniciarTutorial(true)" class="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 p-2 rounded-full transition-colors border border-slate-100 dark:border-slate-600 shadow-sm" title="Ver Tutorial nuevamente">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </button>
             </div>
         </div>
+        <!-- BOTÓN DESCARGAR REPORTE CON ID -->
         <button id="btnDescargarReporte" onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Descargar Reporte Histórico PDF
+            Descargar Reporte histórico PDF
         </button>
     </header>
 
@@ -171,15 +183,23 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 mt-2">
                     <div class="flex-1 flex flex-col items-center">
-                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm">Registro Inicial</span>
+                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm flex items-center gap-1">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                            Registro Inicial
+                        </span>
                         <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative">
-                            <img id="detFotoAntes" class="w-full h-full object-contain p-1" src="" alt="Foto Antes">
+                            <!-- Agregado onclick y clases para Lightbox -->
+                            <img id="detFotoAntes" onclick="abrirLightbox(this.src)" class="w-full h-full object-contain p-1 cursor-pointer hover:scale-105 transition-transform duration-300" src="" alt="Foto Antes" title="Clic para ampliar">
                         </div>
                     </div>
                     <div class="flex-1 flex flex-col items-center">
-                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm">Registro Final</span>
+                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm flex items-center gap-1">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                            Registro Final
+                        </span>
                         <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative">
-                            <img id="detFotoDespues" class="w-full h-full object-contain p-1" src="" alt="Foto Después">
+                            <!-- Agregado onclick y clases para Lightbox -->
+                            <img id="detFotoDespues" onclick="abrirLightbox(this.src)" class="w-full h-full object-contain p-1 cursor-pointer hover:scale-105 transition-transform duration-300" src="" alt="Foto Después" title="Clic para ampliar">
                         </div>
                     </div>
                 </div>
@@ -196,19 +216,26 @@
         <!-- Columna Derecha: Filtros, Tabla y Gráfico -->
         <section class="w-full lg:w-7/12 flex flex-col gap-4 lg:gap-6 min-w-0">
             
-            <!-- Tabla Histórica con Ordenamiento -->
+            <!-- Tabla Histórica con Ordenamiento y Filtros Rápidos -->
             <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col transition-colors" style="height: 450px;">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-3">
-                    <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 whitespace-nowrap">
                         <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                         Registro Histórico
                     </h2>
-                    <select id="filtroSelector" onchange="cambiarModoFiltro()" class="text-sm font-medium bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2 focus:ring-blue-500 w-full sm:w-auto">
-                        <option value="10">Últimas 10 inspecciones</option>
-                        <option value="30">Últimas 30 inspecciones</option>
-                        <option value="rango">Filtrar por Rango...</option>
-                        <option value="todos">Histórico Completo</option>
-                    </select>
+                    
+                    <!-- NUEVOS BOTONES DE FILTRO RÁPIDO (CHIPS) -->
+                    <div id="contenedorFiltros" class="flex flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end">
+                        <button onclick="aplicarFiltroDias(1, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">1 Día</button>
+                        <button onclick="aplicarFiltroDias(3, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">3 Días</button>
+                        <button onclick="aplicarFiltroDias(7, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">7 Días</button>
+                        <button id="btnFiltro10" onclick="aplicarFiltroDias(10, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">10 Días</button>
+                        <button onclick="aplicarFiltroDias(15, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">15 Días</button>
+                        <button onclick="aplicarFiltroDias('todos', this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Todos</button>
+                        <button onclick="mostrarPanelRango(this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Rango
+                        </button>
+                    </div>
                 </div>
 
                 <div id="panelFechas" class="hidden flex-col sm:flex-row items-center gap-2 mb-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">
@@ -223,7 +250,7 @@
                     <button onclick="aplicarFiltroPersonalizado()" class="w-full sm:w-auto bg-blue-600 text-white font-medium px-4 py-1.5 rounded-md hover:bg-blue-700 transition">Aplicar</button>
                 </div>
 
-                <div class="flex-1 overflow-auto custom-scrollbar border border-slate-200 dark:border-slate-700 rounded-lg relative">
+                <div id="contenedorTabla" class="flex-1 overflow-auto custom-scrollbar border border-slate-200 dark:border-slate-700 rounded-lg relative">
                     <table class="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
                         <thead class="bg-slate-100 dark:bg-slate-900 sticky top-0 z-10 text-slate-600 dark:text-slate-400 font-semibold uppercase text-xs border-b border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
                             <tr>
@@ -253,7 +280,7 @@
             </div>
 
             <!-- Gráfico -->
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[300px] transition-colors">
+            <div id="contenedorGrafico" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[300px] transition-colors">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
                     Evolución del nivel al interior del pozo
@@ -292,8 +319,23 @@
             } else {
                 localStorage.theme = 'light';
             }
-            // Redibujar gráfico para aplicar colores adaptados
             if(datosFiltrados.length > 0) actualizarGrafico();
+        }
+
+        // ==========================================
+        // LIGHTBOX FOTOGRÁFICO
+        // ==========================================
+        function abrirLightbox(src) {
+            if (!src || src.includes('data:image/svg+xml')) return; // Previene abrir el placeholder gris
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightbox').classList.remove('hidden');
+            document.getElementById('lightbox').classList.add('flex');
+        }
+
+        function cerrarLightbox() {
+            document.getElementById('lightbox').classList.remove('flex');
+            document.getElementById('lightbox').classList.add('hidden');
+            document.getElementById('lightboxImg').src = '';
         }
 
         window.onload = async () => {
@@ -385,10 +427,12 @@
                     document.getElementById('selectorFicha').value = fichaActual;
                     cambiarFicha(fichaActual);
                 }
-                cambiarModoFiltro(); 
+                // Si recarga en silencioso, solo reejecutamos el ordenamiento con la data actual
+                ejecutarOrdenamiento();
                 if (tablaContainer) tablaContainer.scrollTop = scrollPos;
             } else {
-                aplicarFiltroRapido('10'); 
+                // Carga inicial: Por defecto últimos 10 días
+                aplicarFiltroDias(10, document.getElementById('btnFiltro10'));
             }
         }
 
@@ -404,9 +448,10 @@
                 steps: [
                     { popover: { title: '¡Bienvenido a la Plataforma!', description: 'Haremos un recorrido muy rápido.' } },
                     { element: '#selectorFicha', popover: { title: 'Buscador de Inspecciones', description: 'Aquí puedes desplegar y buscar por fecha o FID cualquier inspección.' } },
-                    { element: '#fichaDetalle', popover: { title: 'Ficha Detallada', description: 'Visualiza el estado del semáforo, operador, niveles y fotos. Puedes descargar esta ficha en PDF.' } },
-                    { element: '#filtroSelector', popover: { title: 'Filtros Inteligentes', description: 'Controla cuánta información ves en la tabla y gráfico.' } },
-                    { element: '#tablaCuerpo', popover: { title: 'Tabla Interactiva', description: '¡NUEVO! Haz clic en los títulos para ordenar (Ej: por Operador o Nivel). Haz clic en la fila para ver su ficha.' } },
+                    { element: '#fichaDetalle', popover: { title: 'Ficha Detallada', description: 'Visualiza el estado, operador, niveles y fotos. HAZ CLIC EN LA FOTO para ampliarla.' } },
+                    { element: '#contenedorFiltros', popover: { title: 'Filtros Rápidos Inteligentes', description: 'Usa estos botones rápidos para ver inspecciones de los últimos días, o define un rango personalizado.' } },
+                    { element: '#contenedorTabla', popover: { title: 'Tabla Interactiva', description: 'Revisa el histórico y haz clic en los títulos para ordenar. Si haces clic en una fila, verás su ficha detallada.' } },
+                    { element: '#contenedorGrafico', popover: { title: 'Evolución de Niveles', description: 'Visualiza el comportamiento del pozo y las lluvias. Ahora cada punto muestra el número de FID asociado para conectarlo con tu reporte.' } },
                     { element: '#btnDarkMode', popover: { title: 'Modo Oscuro', description: 'Cambia entre el modo claro y oscuro según tu preferencia visual.' } },
                     { element: '#btnDescargarReporte', popover: { title: 'Reporte Maestro', description: 'Genera un documento PDF con todos los datos filtrados actualmente.' } },
                     { element: '#btnAyudaTutorial', popover: { title: '¿Necesitas repasar?', description: 'Haz clic aquí para repetir este recorrido. ¡Estás listo!' } }
@@ -436,23 +481,59 @@
             }
         }
 
-        function cambiarModoFiltro() {
-            const selector = document.getElementById('filtroSelector').value;
-            const panel = document.getElementById('panelFechas');
-            
-            if (selector === 'rango') {
-                panel.style.display = 'flex'; panel.classList.remove('hidden');
-            } else {
-                panel.style.display = 'none'; panel.classList.add('hidden');
-                aplicarFiltroRapido(selector);
+        // ==========================================
+        // MOTOR DE FILTROS RÁPIDOS POR DÍAS
+        // ==========================================
+        function aplicarFiltroDias(dias, btnElement) {
+            // Actualizar diseño visual de los botones (Chips)
+            document.querySelectorAll('.btn-filtro').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'dark:bg-blue-600');
+                btn.classList.add('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+            });
+            if (btnElement) {
+                btnElement.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+                btnElement.classList.add('bg-blue-600', 'text-white', 'dark:bg-blue-600');
             }
+
+            // Ocultar panel de rango si estaba abierto
+            document.getElementById('panelFechas').classList.add('hidden');
+            document.getElementById('panelFechas').style.display = 'none';
+
+            if (dias === 'todos') {
+                datosFiltrados = [...registrosGlobales];
+            } else {
+                if (registrosGlobales.length === 0) return;
+                
+                // Fecha de HOY (Real basada en el dispositivo del usuario)
+                const hoy = new Date();
+                
+                // Límite superior: Hoy a las 23:59:59 hrs
+                const maxDate = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+                
+                // Límite inferior: Retrocedemos los días correspondientes desde hoy a las 00:00:00 hrs
+                const minDate = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+                minDate.setDate(minDate.getDate() - (dias - 1)); 
+
+                datosFiltrados = registrosGlobales.filter(r => {
+                    const d = parseFecha(r.fecha).getTime();
+                    return d >= minDate.getTime() && d <= maxDate.getTime();
+                });
+            }
+            ejecutarOrdenamiento();
         }
 
-        function aplicarFiltroRapido(modo) {
-            if (modo === '10') datosFiltrados = registrosGlobales.slice(0, 10);
-            else if (modo === '30') datosFiltrados = registrosGlobales.slice(0, 30);
-            else datosFiltrados = [...registrosGlobales];
-            ejecutarOrdenamiento(); // Ordena antes de dibujar
+        function mostrarPanelRango(btnElement) {
+            document.querySelectorAll('.btn-filtro').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'dark:bg-blue-600');
+                btn.classList.add('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+            });
+            if (btnElement) {
+                btnElement.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+                btnElement.classList.add('bg-blue-600', 'text-white', 'dark:bg-blue-600');
+            }
+            const panel = document.getElementById('panelFechas');
+            panel.style.display = 'flex'; 
+            panel.classList.remove('hidden');
         }
 
         function aplicarFiltroPersonalizado() {
@@ -470,8 +551,7 @@
             
             if (datosFiltrados.length === 0) {
                 alert("No se encontraron inspecciones en este rango.");
-                document.getElementById('filtroSelector').value = '10';
-                cambiarModoFiltro();
+                aplicarFiltroDias(10, document.getElementById('btnFiltro10'));
                 return;
             }
             ejecutarOrdenamiento();
@@ -482,10 +562,10 @@
         // ==========================================
         function ordenarTabla(col) {
             if (sortCol === col) {
-                sortAsc = !sortAsc; // Invierte el orden si haces clic en la misma
+                sortAsc = !sortAsc; 
             } else {
                 sortCol = col;
-                sortAsc = true; // Por defecto ascendente si cambias de columna
+                sortAsc = true; 
             }
             ejecutarOrdenamiento();
         }
@@ -495,7 +575,7 @@
                 let valA, valB;
                 switch(sortCol) {
                     case 'fid': valA = parseInt(a.fid); valB = parseInt(b.fid); break;
-                    case 'estado': valA = a.nivel_antes; valB = b.nivel_antes; break; // Nivel define estado
+                    case 'estado': valA = a.nivel_antes; valB = b.nivel_antes; break; 
                     case 'fecha': 
                         valA = parseFechaHora(a.fecha, a.hora).getTime(); 
                         valB = parseFechaHora(b.fecha, b.hora).getTime(); 
@@ -509,7 +589,6 @@
                 return 0;
             });
 
-            // Actualizar UI de flechas
             ['fid', 'estado', 'fecha', 'operador', 'nivel'].forEach(c => {
                 document.getElementById('sort-' + c).textContent = (sortCol === c) ? (sortAsc ? '▲' : '▼') : '';
             });
@@ -591,7 +670,6 @@
         function actualizarGrafico() {
             const ctx = document.getElementById('graficoNiveles').getContext('2d');
             
-            // EL GRÁFICO SIEMPRE DEBE SER CRONOLÓGICO, ignorando si el usuario ordenó la tabla por Nombre o Nivel
             const datosCronologicos = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
 
             const dataAntes = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
@@ -604,8 +682,6 @@
             const gridColor = isDark ? '#334155' : '#f1f5f9';
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
-            // Mantenemos fondo blanco sólido EXCLUSIVAMENTE para exportar perfecto a PDF, 
-            // pero el lienzo de web usa fondo transparente para heredar el Dark Mode
             const pluginFondoBlancoPDF = {
                 id: 'fondoBlanco',
                 beforeDraw: (chart) => {
@@ -625,7 +701,7 @@
                     datasets: [
                         {
                             label: 'Precipitación (mm)',
-                            type: 'bar',
+                            type: 'bar', // SE MANTIENE EN BARRAS SEGÚN INSTRUCCIÓN
                             data: dataLluvia,
                             backgroundColor: 'rgba(56, 189, 248, 0.4)',
                             borderColor: '#38bdf8',
@@ -659,12 +735,26 @@
                         }
                     ]
                 },
-                plugins: [pluginFondoBlancoPDF],
+                plugins: [pluginFondoBlancoPDF, ChartDataLabels],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        fondoBlanco: false, // Desactivado para web (respeta dark mode), se activa temporalmente en PDF
+                        fondoBlanco: false,
+                        datalabels: {
+                            display: function(context) {
+                                return context.datasetIndex === 1; // Solo mostrar en dataset de 'Nivel Hallado'
+                            },
+                            align: 'top',
+                            anchor: 'end',
+                            offset: 4,
+                            color: textColor,
+                            font: { family: 'Inter', size: 9, weight: 'bold' },
+                            formatter: function(value, context) {
+                                const reg = datosCronologicos[context.dataIndex];
+                                return 'FID ' + reg.fid;
+                            }
+                        },
                         legend: { display: true, position: 'top', labels: { color: textColor, font: { family: 'Inter', size: 11 }, usePointStyle: true } },
                         tooltip: {
                             backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
@@ -734,7 +824,9 @@
             const id = getDriveId(urlOriginal);
             let finalUrl = urlOriginal;
             
-            if (id) finalUrl = `https://wsrv.nl/?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${id}`)}&output=jpg&q=80`;
+            if (id) {
+                finalUrl = `https://wsrv.nl/?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${id}`)}&output=jpg&q=80`;
+            }
 
             try {
                 const controller = new AbortController();
@@ -758,8 +850,9 @@
         }
 
         async function obtenerLogoBase64() {
-            try { return await obtenerImagenBase64Segura(URL_LOGO_EMPRESA); } 
-            catch(e) { return null; }
+            try {
+                return await obtenerImagenBase64Segura(URL_LOGO_EMPRESA);
+            } catch(e) { return null; }
         }
 
         function toggleOverlay(show, text="Procesando...") {
@@ -783,17 +876,25 @@
                     }
 
                     let offsetX = xBase;
-                    if (alignment === 'center') offsetX = xBase + (boxWidth - finalW) / 2;
-                    else if (alignment === 'right') offsetX = xBase + (boxWidth - finalW);
+                    if (alignment === 'center') {
+                        offsetX = xBase + (boxWidth - finalW) / 2;
+                    } else if (alignment === 'right') {
+                        offsetX = xBase + (boxWidth - finalW);
+                    }
                     
                     let offsetY = yBase + (boxHeight - finalH) / 2;
+                    
                     let imgFormat = 'JPEG';
                     if (base64Data.match(/data:image\/png/i)) imgFormat = 'PNG';
                     else if (base64Data.match(/data:image\/webp/i)) imgFormat = 'WEBP';
                     
                     doc.addImage(base64Data, imgFormat, offsetX, offsetY, finalW, finalH);
-                } catch (e) { manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo); }
-            } else { manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo); }
+                } catch (e) {
+                    manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo);
+                }
+            } else {
+                manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo);
+            }
         }
 
         function manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo) {
@@ -808,7 +909,9 @@
         }
 
         function dibujarPieYEncabezado(doc, numeroPagina, totalPaginas, esPortada = false) {
-            if (!esPortada) dibujarImagenConRatio(doc, cachedLogoBase64, 14, 8, 40, 15, 'left', true);
+            if (!esPortada) {
+                dibujarImagenConRatio(doc, cachedLogoBase64, 14, 8, 40, 15, 'left', true);
+            }
             const pageHeight = doc.internal.pageSize.height;
             doc.setDrawColor(200, 200, 200);
             doc.line(14, pageHeight - 12, 196, pageHeight - 12); 
@@ -816,7 +919,9 @@
             doc.setFontSize(9);
             doc.setTextColor(100, 100, 100);
             doc.text("Elaborado por Ingeniería AVAS SpA", 14, pageHeight - 7);
-            if (totalPaginas > 0) doc.text(`Página ${numeroPagina} de ${totalPaginas}`, 196, pageHeight - 7, { align: 'right' });
+            if (totalPaginas > 0) {
+                doc.text(`Página ${numeroPagina} de ${totalPaginas}`, 196, pageHeight - 7, { align: 'right' });
+            }
         }
 
         async function generarPaginaFicha(doc, registro, yBaseOffset = 20) {
@@ -949,21 +1054,19 @@
                 
                 const canvas = document.getElementById('graficoNiveles');
                 if (canvas) {
-                    // Fuerza temporalmente el fondo blanco para el PDF
                     graficoInstancia.options.plugins.fondoBlanco = true;
-                    graficoInstancia.update('none'); // Update sin animación
+                    graficoInstancia.update('none'); 
                     
                     const chartBase64 = canvas.toDataURL('image/jpeg', 1.0);
                     dibujarImagenConRatio(doc, chartBase64, 14, 40, 182, 110, 'center');
                     
-                    // Restaura estado para la web
                     graficoInstancia.options.plugins.fondoBlanco = false;
                     graficoInstancia.update('none');
                 }
 
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
 
-                // Las fichas se imprimen cronologicamente por seguridad
+                // Las fichas se imprimen cronologicamente
                 for (let i = 0; i < datosOrdenados.length; i++) {
                     const reg = datosOrdenados[i];
                     document.getElementById('pdfOverlayText').textContent = `Agregando Ficha ${i+1} de ${totalFichas}...`;
