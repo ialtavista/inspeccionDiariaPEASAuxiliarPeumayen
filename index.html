@@ -993,10 +993,10 @@
                 const dataLimite = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
                 const dataLluvia = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia }));
 
-                // 2. Creamos un canvas temporal gigante (Relación de aspecto más alta)
+                // 2. Creamos un canvas temporal gigante (Relación de aspecto ajustada para encajar bajo la dona)
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 1800; // Ancho 
-                tempCanvas.height = 1400; // ¡Mucho más alto!
+                tempCanvas.width = 1800; // Ancho máximo
+                tempCanvas.height = 1200; // Alto ajustado para no chocar con el footer
                 tempCanvas.style.display = 'none';
                 document.body.appendChild(tempCanvas);
                 
@@ -1056,9 +1056,9 @@
                         ]
                     },
                     options: {
-                        devicePixelRatio: 2, // Multiplicador de nitidez (Anti-pixelado)
+                        devicePixelRatio: 2, // Multiplicador de nitidez 
                         animation: false,
-                        responsive: false, // Forzamos a que respete los 1800x1400px
+                        responsive: false, // Forzamos a que respete los 1800x1200px
                         plugins: {
                             legend: { 
                                 display: true, position: 'top', 
@@ -1095,13 +1095,13 @@
                     plugins: [pluginFondoBlancoMain, pluginLineaUnicaPDF]
                 });
 
-                // 5. Extraemos, estiramos su altura y dibujamos en el PDF
+                // 5. Extraemos y dibujamos asegurando coordenadas limpias
                 const chartBase64 = tempCanvas.toDataURL('image/jpeg', 1.0);
                 chartPdf.destroy();
                 document.body.removeChild(tempCanvas);
 
-                // Dibujamos aprovechando al máximo el espacio: Y=135, Altura=145
-                dibujarImagenConRatio(doc, chartBase64, 14, 135, 182, 145, 'center');
+                // Dibujamos comenzando en Y=160 (debajo de la dona) y limitando alto a 120 para no tapar el pie de página
+                dibujarImagenConRatio(doc, chartBase64, 14, 160, 182, 120, 'center');
 
                 // FICHAS FOTOGRÁFICAS (Página 5+)
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
