@@ -1,35 +1,29 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inspección diaria PEAS Auxiliar Peumayén</title>
     
-    <!-- Chart.js para el Gráfico -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Adaptador de tiempo real para Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <!-- Plugin DataLabels para etiquetar FID en el gráfico -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-
     <!-- Tailwind CSS (Con Configuración de Dark Mode) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {}
-            }
-        }
+        tailwind.config = { darkMode: 'class', theme: { extend: {} } }
     </script>
+
+    <!-- Chart.js y Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
     <!-- Driver.js para el Tutorial Guiado -->
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
     
-    <!-- jsPDF y autoTable para la exportación profesional a PDF -->
+    <!-- jsPDF, autoTable y QRious para la exportación profesional a PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
     <!-- Fuente Inter de Google -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -40,25 +34,13 @@
             transition: background-color 0.3s, color 0.3s;
         }
         
-        /* Barra de desplazamiento elegante para las tablas (Soporta Dark Mode) */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 8px; width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9; border-radius: 4px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1; border-radius: 4px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #475569;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
-        }
+        /* Barra de desplazamiento elegante (Soporta Dark Mode) */
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="p-2 sm:p-4 md:p-6 min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
@@ -77,28 +59,32 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
         <h2 id="pdfOverlayText" class="text-white text-2xl font-bold text-center mb-2">Procesando...</h2>
-        <p class="text-slate-300 mt-2 text-base text-center max-w-md">Descargando recursos y compilando el documento.<br>Por favor, espera unos instantes.</p>
+        <p class="text-slate-300 mt-2 text-base text-center max-w-md">Por favor, espera unos instantes.</p>
     </div>
 
-    <!-- MODAL LIGHTBOX PARA FOTOGRAFÍAS -->
-    <div id="lightbox" class="fixed inset-0 z-[200] hidden bg-slate-900/95 backdrop-blur-sm flex-col items-center justify-center p-4 transition-opacity">
-        <button onclick="cerrarLightbox()" class="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors bg-slate-800/50 hover:bg-slate-800 rounded-full p-2 shadow-lg">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <!-- Modal Lightbox para Fotos -->
+    <div id="lightboxModal" class="fixed inset-0 z-[110] hidden bg-black bg-opacity-90 flex items-center justify-center p-4 transition-opacity" onclick="closeLightbox()">
+        <button class="absolute top-6 right-6 text-white hover:text-red-500 bg-gray-800 rounded-full p-2" onclick="closeLightbox()">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
-        <img id="lightboxImg" src="" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-slate-700">
+        <img id="lightboxImg" src="" class="max-w-full max-h-full object-contain rounded shadow-2xl border border-gray-700">
     </div>
+
+    <!-- Elementos Ocultos para Renderizado de PDF -->
+    <canvas id="hiddenDonutCanvas" width="600" height="600" style="display:none;"></canvas>
+    <canvas id="hiddenQRCanvas" style="display:none;"></canvas>
 
     <!-- Cabecera de la Aplicación -->
     <header class="mb-4 lg:mb-6 flex flex-col md:flex-row justify-between items-center bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 gap-4 transition-colors">
-        <div class="flex items-center gap-3">
-            <div class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 p-2.5 rounded-lg transition-colors">
+        <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 p-2.5 rounded-lg flex-shrink-0">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
             </div>
-            <div>
+            <div class="flex-1">
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white leading-tight"> Inspección diaria <span class="text-blue-600 dark:text-blue-400">PEAS Peumayén</span></h1>
-                <div class="flex items-center gap-2 mt-1">
-                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Plataforma de Reportes - Ingeniería AVAS SpA</p>
-                    <!-- INDICADOR EN VIVO (Auto-Refresh) -->
+                <div class="flex flex-wrap items-center gap-2 mt-1">
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Plataforma de Reportes - AVAS SpA</p>
+                    <!-- INDICADOR EN VIVO -->
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
                         <span class="relative flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -108,22 +94,23 @@
                     </span>
                 </div>
             </div>
-            <div class="flex gap-2 ml-2">
+            
+            <div class="flex items-center gap-1">
                 <!-- BOTÓN DARK MODE -->
                 <button id="btnDarkMode" onclick="toggleDarkMode()" class="text-slate-400 hover:text-amber-500 dark:hover:text-amber-300 bg-slate-50 dark:bg-slate-700 hover:bg-amber-50 dark:hover:bg-slate-600 p-2 rounded-full transition-colors border border-slate-100 dark:border-slate-600 shadow-sm" title="Alternar Modo Oscuro">
-                    <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                     <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 </button>
-                <!-- BOTÓN DE TUTORIAL CON ID -->
+                <!-- BOTÓN DE TUTORIAL -->
                 <button id="btnAyudaTutorial" onclick="iniciarTutorial(true)" class="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 p-2 rounded-full transition-colors border border-slate-100 dark:border-slate-600 shadow-sm" title="Ver Tutorial nuevamente">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </button>
             </div>
         </div>
-        <!-- BOTÓN DESCARGAR REPORTE CON ID -->
-        <button id="btnDescargarReporte" onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
+        <!-- BOTÓN DESCARGAR REPORTE -->
+        <button id="btnDescargarReporte" onclick="descargarReporte()" class="w-full md:w-auto bg-slate-800 dark:bg-blue-600 hover:bg-slate-900 dark:hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Descargar Reporte histórico PDF
+            Descargar Reporte PDF
         </button>
     </header>
 
@@ -134,12 +121,12 @@
         <section class="w-full lg:w-5/12 flex flex-col gap-4">
             
             <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
-                <label for="selectorFicha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Seleccionar Inspección Específica:</label>
+                <label for="selectorFicha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Buscador Específico por FID / Fecha:</label>
                 <div class="relative">
-                    <select id="selectorFicha" onchange="cambiarFicha(this.value)" class="block w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none font-medium transition-colors">
+                    <select id="selectorFicha" onchange="cambiarFicha(this.value)" class="block w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none font-medium transition-colors">
                         <option value="">Cargando datos...</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 dark:text-slate-400">
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
@@ -153,13 +140,13 @@
                     </h2>
                 </div>
                 
-                <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg mb-4 grid grid-cols-2 gap-y-3 gap-x-4 text-sm relative transition-colors border border-slate-100 dark:border-slate-800">
+                <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg mb-4 grid grid-cols-2 gap-y-3 gap-x-4 text-sm relative border border-slate-100 dark:border-slate-700">
                     <div class="absolute top-4 right-4">
-                        <span id="detEstado" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"></span>
+                        <span id="detEstado" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm"></span>
                     </div>
 
                     <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">FID</span> <span id="detFid" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Fecha y Hora</span> <span id="detFechaHora" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Fecha / Hora</span> <span id="detFechaHora" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
                     
                     <div class="col-span-2">
                         <span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Operador Responsable</span> 
@@ -183,32 +170,19 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 mt-2">
                     <div class="flex-1 flex flex-col items-center">
-                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm flex items-center gap-1">
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
-                            Registro Inicial
-                        </span>
-                        <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative">
-                            <!-- Agregado onclick y clases para Lightbox -->
-                            <img id="detFotoAntes" onclick="abrirLightbox(this.src)" class="w-full h-full object-contain p-1 cursor-pointer hover:scale-105 transition-transform duration-300" src="" alt="Foto Antes" title="Clic para ampliar">
+                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm">Registro Inicial</span>
+                        <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative group">
+                            <img id="detFotoAntes" class="w-full h-full object-contain p-1 cursor-pointer transition-transform group-hover:scale-105" src="" alt="Foto Antes" onclick="openLightbox(this.src)">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 pointer-events-none transition-all flex items-center justify-center"><svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg></div>
                         </div>
                     </div>
                     <div class="flex-1 flex flex-col items-center">
-                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm flex items-center gap-1">
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
-                            Registro Final
-                        </span>
-                        <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative">
-                            <!-- Agregado onclick y clases para Lightbox -->
-                            <img id="detFotoDespues" onclick="abrirLightbox(this.src)" class="w-full h-full object-contain p-1 cursor-pointer hover:scale-105 transition-transform duration-300" src="" alt="Foto Después" title="Clic para ampliar">
+                        <span class="text-slate-600 dark:text-slate-400 font-medium mb-1.5 text-sm">Registro Final</span>
+                        <div class="w-full h-56 sm:h-64 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 relative group">
+                            <img id="detFotoDespues" class="w-full h-full object-contain p-1 cursor-pointer transition-transform group-hover:scale-105" src="" alt="Foto Después" onclick="openLightbox(this.src)">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 pointer-events-none transition-all flex items-center justify-center"><svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg></div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
-                    <button onclick="descargarFichaActual()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-5 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        Descargar Ficha PDF
-                    </button>
                 </div>
             </div>
         </section>
@@ -216,38 +190,38 @@
         <!-- Columna Derecha: Filtros, Tabla y Gráfico -->
         <section class="w-full lg:w-7/12 flex flex-col gap-4 lg:gap-6 min-w-0">
             
-            <!-- Tabla Histórica con Ordenamiento y Filtros Rápidos -->
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col transition-colors" style="height: 450px;">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-3">
-                    <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 whitespace-nowrap">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col transition-colors" style="height: 480px;">
+                <div class="flex flex-col mb-4 gap-3">
+                    <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                         Registro Histórico
                     </h2>
                     
-                    <!-- NUEVOS BOTONES DE FILTRO RÁPIDO (CHIPS) -->
-                    <div id="contenedorFiltros" class="flex flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                        <button onclick="aplicarFiltroDias(1, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">1 Día</button>
-                        <button onclick="aplicarFiltroDias(3, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">3 Días</button>
-                        <button onclick="aplicarFiltroDias(7, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">7 Días</button>
-                        <button id="btnFiltro10" onclick="aplicarFiltroDias(10, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">10 Días</button>
-                        <button onclick="aplicarFiltroDias(15, this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">15 Días</button>
-                        <button onclick="aplicarFiltroDias('todos', this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Todos</button>
-                        <button onclick="mostrarPanelRango(this)" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Rango
+                    <!-- Botones de Filtro Rápido (Chips) -->
+                    <div class="flex flex-wrap items-center gap-2" id="contenedorFiltros">
+                        <button onclick="aplicarFiltroDias(1)" class="filtro-btn px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800" data-val="1">Último Día</button>
+                        <button onclick="aplicarFiltroDias(3)" class="filtro-btn px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600" data-val="3">3 Días</button>
+                        <button onclick="aplicarFiltroDias(7)" class="filtro-btn px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600" data-val="7">Semana</button>
+                        <button onclick="aplicarFiltroDias(10)" class="filtro-btn px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600" data-val="10">10 Días</button>
+                        <button onclick="aplicarFiltroDias(15)" class="filtro-btn px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600" data-val="15">15 Días</button>
+                        <button onclick="aplicarFiltroTodos()" class="filtro-btn px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600" data-val="todos">Histórico Completo</button>
+                        
+                        <button onclick="togglePanelPersonalizado()" class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 border border-dashed border-slate-300 dark:border-slate-500">
+                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Rango Exacto
                         </button>
                     </div>
-                </div>
 
-                <div id="panelFechas" class="hidden flex-col sm:flex-row items-center gap-2 mb-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label class="text-slate-600 dark:text-slate-300 font-semibold">Desde:</label>
-                        <input type="date" id="fechaInicio" class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white rounded-md p-1.5 flex-1 outline-none">
+                    <div id="panelFechas" class="hidden flex-col sm:flex-row items-center gap-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label class="text-slate-600 dark:text-slate-400 font-semibold">Desde:</label>
+                            <input type="date" id="fechaInicio" class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-md p-1.5 flex-1 outline-none">
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label class="text-slate-600 dark:text-slate-400 font-semibold">Hasta:</label>
+                            <input type="date" id="fechaFin" class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-md p-1.5 flex-1 outline-none">
+                        </div>
+                        <button onclick="aplicarFiltroPersonalizado()" class="w-full sm:w-auto bg-blue-600 text-white font-medium px-4 py-1.5 rounded-md hover:bg-blue-700 transition">Filtrar</button>
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label class="text-slate-600 dark:text-slate-300 font-semibold">Hasta:</label>
-                        <input type="date" id="fechaFin" class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white rounded-md p-1.5 flex-1 outline-none">
-                    </div>
-                    <button onclick="aplicarFiltroPersonalizado()" class="w-full sm:w-auto bg-blue-600 text-white font-medium px-4 py-1.5 rounded-md hover:bg-blue-700 transition">Aplicar</button>
                 </div>
 
                 <div id="contenedorTabla" class="flex-1 overflow-auto custom-scrollbar border border-slate-200 dark:border-slate-700 rounded-lg relative">
@@ -272,20 +246,19 @@
                                 <th class="p-3 w-full">Observación</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaCuerpo" class="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-300">
-                            <tr><td colspan="6" class="p-4 text-center">Cargando datos desde Google Sheets...</td></tr>
+                        <tbody id="tablaCuerpo" class="divide-y divide-slate-100 dark:divide-slate-700/50 text-slate-700 dark:text-slate-300">
+                            <tr><td colspan="6" class="p-4 text-center">Cargando datos en vivo...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Gráfico -->
-            <div id="contenedorGrafico" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[300px] transition-colors">
+            <div id="contenedorGrafico" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[320px] transition-colors">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                    Evolución del nivel al interior del pozo
+                    Evolución del nivel y precipitaciones
                 </h2>
-                <div class="relative flex-1 w-full min-h-[250px]">
+                <div class="relative flex-1 w-full min-h-[260px]">
                     <canvas id="graficoNiveles"></canvas>
                 </div>
             </div>
@@ -294,77 +267,70 @@
     </main>
 
     <script>
+        // CONFIGURACIÓN CORE
         const SHEET_ID = '17AdORP1p500PO9WOir7BmptH424-NKF3oiHA9z13VoM';
         const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
         const URL_LOGO_EMPRESA = 'LogoAvas.jpg'; 
         
+        // Registrar Plugin de Etiquetas de Datos globalmente pero desactivarlo por defecto
+        Chart.register(ChartDataLabels);
+
         let cachedLogoBase64 = null; 
         let registrosGlobales = []; 
         let datosFiltrados = [];    
         let graficoInstancia = null;
+        let filtroActual = 1; // Por defecto mostramos el último día
         
-        // Variables para Ordenamiento (Sorting)
+        // Variables para Sorting
         let sortCol = 'fecha';
         let sortAsc = false; 
 
         const { jsPDF } = window.jspdf;
 
-        // ==========================================
-        // MODO OSCURO - TOGGLE JS
-        // ==========================================
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            if (document.documentElement.classList.contains('dark')) {
-                localStorage.theme = 'dark';
-            } else {
-                localStorage.theme = 'light';
-            }
-            if(datosFiltrados.length > 0) actualizarGrafico();
-        }
-
-        // ==========================================
-        // LIGHTBOX FOTOGRÁFICO
-        // ==========================================
-        function abrirLightbox(src) {
-            if (!src || src.includes('data:image/svg+xml')) return; // Previene abrir el placeholder gris
-            document.getElementById('lightboxImg').src = src;
-            document.getElementById('lightbox').classList.remove('hidden');
-            document.getElementById('lightbox').classList.add('flex');
-        }
-
-        function cerrarLightbox() {
-            document.getElementById('lightbox').classList.remove('flex');
-            document.getElementById('lightbox').classList.add('hidden');
-            document.getElementById('lightboxImg').src = '';
-        }
-
         window.onload = async () => {
             await obtenerDatos();
             obtenerLogoBase64().then(b64 => cachedLogoBase64 = b64);
             
-            setTimeout(() => { iniciarTutorial(false); }, 1000);
+            setTimeout(() => iniciarTutorial(false), 1500);
 
             setInterval(() => {
-                console.log("Actualizando datos en segundo plano...");
-                obtenerDatos(true); 
+                console.log("Auto-Refresh: Buscando nuevos datos...");
+                obtenerDatos(true);
             }, 180000);
         };
 
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            if(datosFiltrados.length > 0) actualizarGrafico();
+        }
+
+        function openLightbox(src) {
+            if (!src || src.includes('data:image/svg+xml')) return;
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightboxModal').classList.replace('hidden', 'flex');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxModal').classList.replace('flex', 'hidden');
+            setTimeout(() => document.getElementById('lightboxImg').src = "", 300);
+        }
+
         function parseFecha(fechaStr) {
             if (!fechaStr) return new Date(0);
-            const parts = String(fechaStr).split(/[-/]/);
+            const parts = fechaStr.split(/[-/]/);
             if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
             return new Date(fechaStr);
         }
 
         function parseFechaHora(fechaStr, horaStr) {
-            const parts = String(fechaStr).split(/[-/]/);
+            const parts = fechaStr.split(/[-/]/);
             let d = new Date();
             if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
             else d = new Date(fechaStr);
             
             if (horaStr) {
-                const hParts = String(horaStr).split(':');
+                const hParts = horaStr.split(':');
                 if(hParts.length >= 2) d.setHours(parseInt(hParts[0], 10), parseInt(hParts[1], 10), 0, 0);
             }
             return d;
@@ -381,7 +347,7 @@
             } catch (error) {
                 console.error("Error al obtener datos:", error);
                 if (!silencioso) {
-                    document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos.</td></tr>`;
+                    document.getElementById('tablaCuerpo').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500 font-medium">Error al cargar los datos. Revisa la conexión o el ID del Sheet.</td></tr>`;
                 }
             }
         }
@@ -396,14 +362,12 @@
             
             table.rows.forEach(row => {
                 const filaData = {};
-                if(row.c) {
-                    row.c.forEach((cell, index) => {
-                        const colName = cols[index];
-                        if (colName) filaData[colName] = (cell && cell !== null) ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
-                    });
-                }
+                row.c.forEach((cell, index) => {
+                    const colName = cols[index];
+                    if (colName) filaData[colName] = cell ? (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')) : '';
+                });
                 
-                if (filaData.fid !== undefined && filaData.fid !== '' && filaData.fid !== null) {
+                if (filaData.fid !== undefined && filaData.fid !== '') {
                     registrosGlobales.push({
                         fid: String(filaData.fid),
                         fecha: String(filaData.fecha || ''),
@@ -427,146 +391,106 @@
                     document.getElementById('selectorFicha').value = fichaActual;
                     cambiarFicha(fichaActual);
                 }
-                // Si recarga en silencioso, solo reejecutamos el ordenamiento con la data actual
-                ejecutarOrdenamiento();
+                ejecutarFiltroMatematico(); // Reaplica el filtro actual silenciosamente
                 if (tablaContainer) tablaContainer.scrollTop = scrollPos;
             } else {
-                // Carga inicial: Por defecto últimos 10 días
-                aplicarFiltroDias(10, document.getElementById('btnFiltro10'));
+                aplicarFiltroDias(1); // Carga inicial por defecto: Último Día
             }
         }
 
-        function iniciarTutorial(forzarRepeticion = false) {
-            const tutorialVisto = localStorage.getItem('avas_tutorial_peas');
-            if (tutorialVisto === 'true' && !forzarRepeticion) return;
-
-            const driver = window.driver.js.driver;
-            const driverObj = driver({
-                showProgress: true, animate: true,
-                doneBtnText: 'Entendido', nextBtnText: 'Siguiente', prevBtnText: 'Anterior',
-                progressText: 'Paso {{current}} de {{total}}',
-                steps: [
-                    { popover: { title: '¡Bienvenido a la Plataforma!', description: 'Haremos un recorrido muy rápido.' } },
-                    { element: '#selectorFicha', popover: { title: 'Buscador de Inspecciones', description: 'Aquí puedes desplegar y buscar por fecha o FID cualquier inspección.' } },
-                    { element: '#fichaDetalle', popover: { title: 'Ficha Detallada', description: 'Visualiza el estado, operador, niveles y fotos. HAZ CLIC EN LA FOTO para ampliarla.' } },
-                    { element: '#contenedorFiltros', popover: { title: 'Filtros Rápidos Inteligentes', description: 'Usa estos botones rápidos para ver inspecciones de los últimos días, o define un rango personalizado.' } },
-                    { element: '#contenedorTabla', popover: { title: 'Tabla Interactiva', description: 'Revisa el histórico y haz clic en los títulos para ordenar. Si haces clic en una fila, verás su ficha detallada.' } },
-                    { element: '#contenedorGrafico', popover: { title: 'Evolución de Niveles', description: 'Visualiza el comportamiento del pozo y las lluvias. Ahora cada punto muestra el número de FID asociado para conectarlo con tu reporte.' } },
-                    { element: '#btnDarkMode', popover: { title: 'Modo Oscuro', description: 'Cambia entre el modo claro y oscuro según tu preferencia visual.' } },
-                    { element: '#btnDescargarReporte', popover: { title: 'Reporte Maestro', description: 'Genera un documento PDF con todos los datos filtrados actualmente.' } },
-                    { element: '#btnAyudaTutorial', popover: { title: '¿Necesitas repasar?', description: 'Haz clic aquí para repetir este recorrido. ¡Estás listo!' } }
-                ],
-                onDestroyStarted: () => {
-                    localStorage.setItem('avas_tutorial_peas', 'true');
-                    driverObj.destroy();
+        function actualizarUIBotonesFiltro(valActivo) {
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                if (btn.dataset.val == valActivo) {
+                    btn.classList.replace('bg-slate-100', 'bg-blue-100');
+                    btn.classList.replace('text-slate-600', 'text-blue-700');
+                    btn.classList.replace('dark:bg-slate-700', 'dark:bg-blue-900/50');
+                    btn.classList.replace('dark:text-slate-300', 'dark:text-blue-400');
+                    btn.classList.add('border', 'border-blue-200', 'dark:border-blue-800');
+                } else {
+                    btn.classList.replace('bg-blue-100', 'bg-slate-100');
+                    btn.classList.replace('text-blue-700', 'text-slate-600');
+                    btn.classList.replace('dark:bg-blue-900/50', 'dark:bg-slate-700');
+                    btn.classList.replace('dark:text-blue-400', 'dark:text-slate-300');
+                    btn.classList.remove('border', 'border-blue-200', 'dark:border-blue-800');
                 }
             });
-            driverObj.drive();
-        }
-        
-        function actualizarSelectorFichas() {
-            const selector = document.getElementById('selectorFicha');
-            selector.innerHTML = '';
-            
-            registrosGlobales.forEach(reg => {
-                const option = document.createElement('option');
-                option.value = reg.fid;
-                option.textContent = `FID: ${reg.fid} - ${reg.fecha} ${reg.hora}`;
-                selector.appendChild(option);
-            });
-
-            if (registrosGlobales.length > 0) {
-                cambiarFicha(registrosGlobales[0].fid);
-                document.getElementById('fichaDetalle').classList.remove('hidden');
-            }
+            document.getElementById('panelFechas').classList.replace('flex', 'hidden');
         }
 
-        // ==========================================
-        // MOTOR DE FILTROS RÁPIDOS POR DÍAS
-        // ==========================================
-        function aplicarFiltroDias(dias, btnElement) {
-            // Actualizar diseño visual de los botones (Chips)
-            document.querySelectorAll('.btn-filtro').forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'text-white', 'dark:bg-blue-600');
-                btn.classList.add('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
-            });
-            if (btnElement) {
-                btnElement.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
-                btnElement.classList.add('bg-blue-600', 'text-white', 'dark:bg-blue-600');
-            }
-
-            // Ocultar panel de rango si estaba abierto
-            document.getElementById('panelFechas').classList.add('hidden');
-            document.getElementById('panelFechas').style.display = 'none';
-
-            if (dias === 'todos') {
-                datosFiltrados = [...registrosGlobales];
-            } else {
-                if (registrosGlobales.length === 0) return;
-                
-                // Fecha de HOY (Real basada en el dispositivo del usuario)
-                const hoy = new Date();
-                
-                // Límite superior: Hoy a las 23:59:59 hrs
-                const maxDate = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
-                
-                // Límite inferior: Retrocedemos los días correspondientes desde hoy a las 00:00:00 hrs
-                const minDate = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
-                minDate.setDate(minDate.getDate() - (dias - 1)); 
-
-                datosFiltrados = registrosGlobales.filter(r => {
-                    const d = parseFecha(r.fecha).getTime();
-                    return d >= minDate.getTime() && d <= maxDate.getTime();
-                });
-            }
-            ejecutarOrdenamiento();
+        function aplicarFiltroDias(dias) {
+            filtroActual = dias;
+            actualizarUIBotonesFiltro(dias);
+            ejecutarFiltroMatematico();
         }
 
-        function mostrarPanelRango(btnElement) {
-            document.querySelectorAll('.btn-filtro').forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'text-white', 'dark:bg-blue-600');
-                btn.classList.add('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
-            });
-            if (btnElement) {
-                btnElement.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
-                btnElement.classList.add('bg-blue-600', 'text-white', 'dark:bg-blue-600');
-            }
+        function aplicarFiltroTodos() {
+            filtroActual = 'todos';
+            actualizarUIBotonesFiltro('todos');
+            ejecutarFiltroMatematico();
+        }
+
+        function togglePanelPersonalizado() {
             const panel = document.getElementById('panelFechas');
-            panel.style.display = 'flex'; 
-            panel.classList.remove('hidden');
+            if(panel.classList.contains('hidden')) {
+                panel.classList.replace('hidden', 'flex');
+                actualizarUIBotonesFiltro('ninguno');
+            } else {
+                panel.classList.replace('flex', 'hidden');
+            }
         }
 
         function aplicarFiltroPersonalizado() {
             const ini = document.getElementById('fechaInicio').value;
             const fin = document.getElementById('fechaFin').value;
-            if (!ini || !fin) { alert("Selecciona fecha de inicio y fin."); return; }
+            if (!ini || !fin) return alert("Selecciona fecha de inicio y fin.");
             
-            const dIni = new Date(ini + "T00:00:00");
-            const dFin = new Date(fin + "T23:59:59");
-            
-            datosFiltrados = registrosGlobales.filter(r => {
-                const d = parseFecha(r.fecha);
-                return d >= dIni && d <= dFin;
-            });
-            
-            if (datosFiltrados.length === 0) {
-                alert("No se encontraron inspecciones en este rango.");
-                aplicarFiltroDias(10, document.getElementById('btnFiltro10'));
-                return;
-            }
-            ejecutarOrdenamiento();
+            filtroActual = 'rango';
+            actualizarUIBotonesFiltro('ninguno');
+            ejecutarFiltroMatematico();
         }
 
-        // ==========================================
-        // MOTOR DE ORDENAMIENTO (SORTING)
-        // ==========================================
-        function ordenarTabla(col) {
-            if (sortCol === col) {
-                sortAsc = !sortAsc; 
+        function ejecutarFiltroMatematico() {
+            if (filtroActual === 'todos') {
+                datosFiltrados = [...registrosGlobales];
+            } else if (filtroActual === 'rango') {
+                const ini = document.getElementById('fechaInicio').value;
+                const fin = document.getElementById('fechaFin').value;
+                const dIni = new Date(ini + "T00:00:00");
+                const dFin = new Date(fin + "T23:59:59");
+                datosFiltrados = registrosGlobales.filter(r => {
+                    const d = parseFecha(r.fecha);
+                    return d >= dIni && d <= dFin;
+                });
             } else {
-                sortCol = col;
-                sortAsc = true; 
+                // Filtro por días exactos usando la fecha de hoy
+                const hoy = new Date();
+                hoy.setHours(23, 59, 59, 999);
+                const limite = new Date(hoy);
+                limite.setDate(limite.getDate() - parseInt(filtroActual) + 1);
+                limite.setHours(0, 0, 0, 0);
+
+                datosFiltrados = registrosGlobales.filter(r => {
+                    const d = parseFecha(r.fecha);
+                    return d >= limite && d <= hoy;
+                });
             }
+            
+            if (datosFiltrados.length === 0 && filtroActual !== 'rango') {
+                // Si el filtro no arroja nada (ej. no ha habido inspecciones hoy), caer hacia atrás.
+                console.log("No hay datos para el filtro seleccionado, mostrando todo.");
+                datosFiltrados = [...registrosGlobales];
+            } else if (datosFiltrados.length === 0 && filtroActual === 'rango') {
+                alert("No se encontraron inspecciones en este rango.");
+                aplicarFiltroDias(1);
+                return;
+            }
+
+            ejecutarOrdenamiento(); 
+        }
+
+        function ordenarTabla(col) {
+            if (sortCol === col) sortAsc = !sortAsc;
+            else { sortCol = col; sortAsc = true; }
             ejecutarOrdenamiento();
         }
 
@@ -575,7 +499,7 @@
                 let valA, valB;
                 switch(sortCol) {
                     case 'fid': valA = parseInt(a.fid); valB = parseInt(b.fid); break;
-                    case 'estado': valA = a.nivel_antes; valB = b.nivel_antes; break; 
+                    case 'estado': valA = a.nivel_antes; valB = b.nivel_antes; break;
                     case 'fecha': 
                         valA = parseFechaHora(a.fecha, a.hora).getTime(); 
                         valB = parseFechaHora(b.fecha, b.hora).getTime(); 
@@ -596,14 +520,25 @@
             actualizarUI();
         }
 
-        function obtenerEstadoSemaforo(nivel) {
-            if (nivel < 1.5) {
-                return { texto: 'Normal', bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-700 dark:text-emerald-400', pdfBg: [209, 250, 229], pdfText: [4, 120, 87] };
-            } else if (nivel <= 2.5) {
-                return { texto: 'Alerta', bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-400', pdfBg: [254, 243, 199], pdfText: [180, 83, 9] };
-            } else {
-                return { texto: 'Crítico', bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-400', pdfBg: [254, 226, 226], pdfText: [185, 28, 28] };
+        function actualizarSelectorFichas() {
+            const selector = document.getElementById('selectorFicha');
+            selector.innerHTML = '';
+            registrosGlobales.forEach(reg => {
+                const option = document.createElement('option');
+                option.value = reg.fid;
+                option.textContent = `FID: ${reg.fid} - ${reg.fecha} ${reg.hora}`;
+                selector.appendChild(option);
+            });
+            if (registrosGlobales.length > 0) {
+                cambiarFicha(registrosGlobales[0].fid);
+                document.getElementById('fichaDetalle').classList.remove('hidden');
             }
+        }
+
+        function obtenerEstadoSemaforo(nivel) {
+            if (nivel < 1.5) return { texto: 'Normal', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', pdfBg: [209, 250, 229], pdfText: [4, 120, 87] };
+            else if (nivel <= 2.5) return { texto: 'Alerta', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', pdfBg: [254, 243, 199], pdfText: [180, 83, 9] };
+            else return { texto: 'Crítico', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', pdfBg: [254, 226, 226], pdfText: [185, 28, 28] };
         }
 
         function actualizarUI() {
@@ -612,27 +547,17 @@
 
             datosFiltrados.forEach(reg => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0";
+                tr.className = "hover:bg-blue-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-0";
                 
                 const estado = obtenerEstadoSemaforo(reg.nivel_antes);
-                
-                tr.onclick = () => { 
-                    document.getElementById('selectorFicha').value = reg.fid; 
-                    cambiarFicha(reg.fid); 
-                };
+                tr.onclick = () => { document.getElementById('selectorFicha').value = reg.fid; cambiarFicha(reg.fid); };
                 
                 tr.innerHTML = `
                     <td class="p-3 font-bold text-slate-900 dark:text-white">${reg.fid}</td>
-                    <td class="p-3">
-                        <span class="px-2 py-1 rounded text-xs font-bold ${estado.bg} ${estado.text}">${estado.texto}</span>
-                    </td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${estado.bg} ${estado.text}">${estado.texto}</span></td>
                     <td class="p-3">${reg.fecha} <span class="text-slate-400 dark:text-slate-500 text-xs ml-1">${reg.hora}</span></td>
                     <td class="p-3 text-slate-600 dark:text-slate-400 text-xs">${reg.operador}</td>
-                    <td class="p-3">
-                        <span class="text-blue-600 dark:text-blue-400 font-bold">${reg.nivel_antes}</span> 
-                        <span class="text-slate-400 dark:text-slate-500 text-xs mx-1">-></span> 
-                        <span class="text-emerald-600 dark:text-emerald-400 font-semibold">${reg.nivel_despues}</span>
-                    </td>
+                    <td class="p-3"><span class="text-blue-600 dark:text-blue-400 font-bold">${reg.nivel_antes}</span> <span class="text-slate-400 text-xs mx-1">-></span> <span class="text-emerald-600 dark:text-emerald-400 font-semibold">${reg.nivel_despues}</span></td>
                     <td class="p-3 truncate max-w-[150px]" title="${reg.observacion}">${reg.observacion}</td>
                 `;
                 tbody.appendChild(tr);
@@ -641,40 +566,23 @@
             if (datosFiltrados.length > 0) actualizarGrafico();
         }
 
-        function cambiarFicha(fid) {
-            const registro = registrosGlobales.find(r => r.fid === String(fid));
-            if (!registro) return;
-
-            const estado = obtenerEstadoSemaforo(registro.nivel_antes);
-            
-            const badge = document.getElementById('detEstado');
-            badge.textContent = estado.texto;
-            badge.className = `px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${estado.bg} ${estado.text}`;
-
-            document.getElementById('detFid').textContent = registro.fid;
-            document.getElementById('detFechaHora').textContent = `${registro.fecha} - ${registro.hora}`;
-            document.getElementById('detOperador').textContent = registro.operador;
-            document.getElementById('detObs').textContent = registro.observacion;
-            document.getElementById('detNivelAntes').textContent = registro.nivel_antes;
-            document.getElementById('detNivelDespues').textContent = registro.nivel_despues;
-
-            const imgAntes = document.getElementById('detFotoAntes');
-            const imgDespues = document.getElementById('detFotoDespues');
-            const urlAntes = getDirectImageUrl(registro.foto_antes);
-            const urlDespues = getDirectImageUrl(registro.foto_despues);
-
-            imgAntes.src = urlAntes || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" fill="%2394a3b8" font-family="sans-serif">Sin Imagen</text></svg>';
-            imgDespues.src = urlDespues || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" fill="%2394a3b8" font-family="sans-serif">Sin Imagen</text></svg>';
-        }
-
         function actualizarGrafico() {
             const ctx = document.getElementById('graficoNiveles').getContext('2d');
-            
-            // EL GRÁFICO SIEMPRE DEBE SER CRONOLÓGICO
             const datosCronologicos = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
 
-            const dataAntes = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
-            const dataLimite = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
+            const dataAntes = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes, fid: r.fid }));
+            
+            // Fix para dibujar línea base cuando hay 1 solo dato
+            let dataLimite = [];
+            if (datosCronologicos.length === 1) {
+                let p1 = parseFechaHora(datosCronologicos[0].fecha, datosCronologicos[0].hora);
+                let p2 = new Date(p1.getTime());
+                p1.setHours(p1.getHours() - 1); p2.setHours(p2.getHours() + 1);
+                dataLimite = [{x: p1, y: 3.0}, {x: p2, y: 3.0}];
+            } else {
+                dataLimite = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
+            }
+
             const dataLluvia = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia })); 
 
             if (graficoInstancia) graficoInstancia.destroy();
@@ -683,7 +591,6 @@
             const gridColor = isDark ? '#334155' : '#f1f5f9';
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
-            // Mantenemos fondo blanco sólido EXCLUSIVAMENTE para exportar perfecto a PDF
             const pluginFondoBlancoPDF = {
                 id: 'fondoBlanco',
                 beforeDraw: (chart) => {
@@ -697,46 +604,20 @@
                 }
             };
 
-            // NUEVO PLUGIN: Dibuja la línea roja forzada cruzando toda la pantalla cuando hay solo 1 dato
-            const pluginLineaLimite = {
-                id: 'lineaLimite',
-                beforeDatasetsDraw: (chart) => {
-                    if (datosCronologicos.length !== 1) return; // Solo actuar si hay 1 solo registro
-                    
-                    const meta = chart.getDatasetMeta(2); // Índice 2 corresponde a "Límite Pozo (3m)"
-                    if (meta.hidden) return; // Respetar si el usuario oculta la línea desde la leyenda
-
-                    const ctx = chart.ctx;
-                    const yAxis = chart.scales.yNivel;
-                    const xAxis = chart.scales.x;
-                    if (!yAxis || !xAxis) return;
-                    
-                    const yPixel = yAxis.getPixelForValue(3.0);
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(xAxis.left, yPixel);
-                    ctx.lineTo(xAxis.right, yPixel);
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = '#ef4444';
-                    ctx.setLineDash([5, 5]);
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            };
-
             graficoInstancia = new Chart(ctx, {
                 type: 'line',
                 data: {
                     datasets: [
                         {
                             label: 'Precipitación (mm)',
-                            type: 'bar', // SE MANTIENE EN BARRAS SEGÚN INSTRUCCIÓN
+                            type: 'bar',
                             data: dataLluvia,
                             backgroundColor: 'rgba(56, 189, 248, 0.4)',
                             borderColor: '#38bdf8',
                             borderWidth: 1,
+                            yAxisID: 'yLluvia',
                             barPercentage: 0.5,
-                            yAxisID: 'yLluvia'
+                            datalabels: { display: false } // No mostramos FID en las lluvias
                         },
                         {
                             label: 'Nivel Hallado (m)',
@@ -750,7 +631,15 @@
                             pointBorderColor: '#ffffff',
                             pointRadius: 4,
                             pointHoverRadius: 6,
-                            yAxisID: 'yNivel'
+                            yAxisID: 'yNivel',
+                            datalabels: {
+                                display: true,
+                                align: 'top',
+                                offset: 4,
+                                color: isDark ? '#cbd5e1' : '#475569',
+                                font: { family: 'Inter', size: 9, weight: 'bold' },
+                                formatter: function(value, context) { return 'FID ' + value.fid; }
+                            }
                         },
                         {
                             label: 'Límite Pozo (3m)',
@@ -760,30 +649,16 @@
                             borderDash: [5, 5],
                             pointRadius: 0,
                             fill: false,
-                            yAxisID: 'yNivel'
+                            yAxisID: 'yNivel',
+                            datalabels: { display: false }
                         }
                     ]
                 },
-                plugins: [pluginFondoBlancoPDF, pluginLineaLimite, ChartDataLabels],
+                plugins: [pluginFondoBlancoPDF, ChartDataLabels],
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: {
-                        fondoBlanco: false,
-                        datalabels: {
-                            display: function(context) {
-                                return context.datasetIndex === 1; // Solo mostrar en dataset de 'Nivel Hallado'
-                            },
-                            align: 'top',
-                            anchor: 'end',
-                            offset: 4,
-                            color: textColor,
-                            font: { family: 'Inter', size: 9, weight: 'bold' },
-                            formatter: function(value, context) {
-                                const reg = datosCronologicos[context.dataIndex];
-                                return 'FID ' + reg.fid;
-                            }
-                        },
+                        fondoBlanco: false, 
                         legend: { display: true, position: 'top', labels: { color: textColor, font: { family: 'Inter', size: 11 }, usePointStyle: true } },
                         tooltip: {
                             backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
@@ -792,10 +667,7 @@
                                     if (context.datasetIndex === 0) return ` Precipitación: ${context.raw.y} mm`;
                                     if (context.datasetIndex === 1) {
                                         const reg = datosCronologicos[context.dataIndex];
-                                        return [
-                                            ` Nivel Hallado: ${reg.nivel_antes} m`,
-                                            ` Post-Agotamiento: ${reg.nivel_despues} m`
-                                        ];
+                                        return [ ` Nivel Hallado: ${reg.nivel_antes} m`, ` Post-Agotamiento: ${reg.nivel_despues} m` ];
                                     }
                                     return ` Profundidad Máxima: 3 m`;
                                 }
@@ -806,36 +678,27 @@
                         yNivel: { 
                             type: 'linear', position: 'left', beginAtZero: true, 
                             title: { display: true, text: 'Nivel del Pozo (m)', color: textColor, font: {family: 'Inter', size: 11} },
-                            grid: { color: gridColor }, suggestedMax: 3.5,
-                            ticks: { color: textColor }
+                            grid: { color: gridColor }, suggestedMax: 3.5, ticks: { color: textColor }
                         },
                         yLluvia: {
                             type: 'linear', position: 'right', beginAtZero: true,
                             title: { display: true, text: 'Lluvia Caída (mm)', color: '#0ea5e9', font: {family: 'Inter', size: 11} },
-                            grid: { drawOnChartArea: false }, suggestedMax: 30,
-                            ticks: { color: textColor }
+                            grid: { drawOnChartArea: false }, suggestedMax: 30, ticks: { color: textColor }
                         },
                         x: {
                             type: 'time', 
                             time: {
                                 tooltipFormat: 'dd/MM/yyyy HH:mm',
-                                displayFormats: { 
-                                    millisecond: 'dd MMM HH:mm',
-                                    second: 'dd MMM HH:mm',
-                                    minute: 'dd MMM HH:mm',
-                                    hour: 'dd MMM HH:mm',
-                                    day: 'dd MMM' 
-                                }
+                                displayFormats: { minute: 'dd MMM HH:mm', hour: 'dd MMM HH:mm', day: 'dd MMM' }
                             },
-                            offset: true, 
-                            grid: { display: false },
+                            offset: true, grid: { display: false },
                             ticks: { color: textColor, maxTicksLimit: 8, font: {family: 'Inter', size: 10} }
                         }
                     }
                 }
             });
         }
- 
+
         function getDriveId(url) {
             if (!url) return null;
             const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
@@ -848,22 +711,43 @@
             return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
         }
 
+        function cambiarFicha(fid) {
+            const registro = registrosGlobales.find(r => r.fid === String(fid));
+            if (!registro) return;
+
+            const estado = obtenerEstadoSemaforo(registro.nivel_antes);
+            const badge = document.getElementById('detEstado');
+            badge.textContent = estado.texto;
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${estado.bg} ${estado.text} shadow-sm`;
+
+            document.getElementById('detFid').textContent = registro.fid;
+            document.getElementById('detFechaHora').textContent = `${registro.fecha} - ${registro.hora}`;
+            document.getElementById('detOperador').textContent = registro.operador;
+            document.getElementById('detObs').textContent = registro.observacion;
+            document.getElementById('detNivelAntes').textContent = registro.nivel_antes;
+            document.getElementById('detNivelDespues').textContent = registro.nivel_despues;
+
+            const imgAntes = document.getElementById('detFotoAntes');
+            const imgDespues = document.getElementById('detFotoDespues');
+            const urlAntes = getDirectImageUrl(registro.foto_antes);
+            const urlDespues = getDirectImageUrl(registro.foto_despues);
+
+            const svgFallback = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" fill="%2394a3b8" font-family="sans-serif">Sin Imagen</text></svg>';
+            imgAntes.src = urlAntes || svgFallback;
+            imgDespues.src = urlDespues || svgFallback;
+        }
+
         async function obtenerImagenBase64Segura(urlOriginal) {
             if (!urlOriginal) return null;
             const id = getDriveId(urlOriginal);
             let finalUrl = urlOriginal;
-            
-            if (id) {
-                finalUrl = `https://wsrv.nl/?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${id}`)}&output=jpg&q=80`;
-            }
+            if (id) finalUrl = `https://wsrv.nl/?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${id}`)}&output=jpg&q=80`;
 
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 6000); 
-
                 const response = await fetch(finalUrl, { signal: controller.signal });
                 clearTimeout(timeoutId);
-                
                 if (!response.ok) throw new Error('Respuesta CDN fallida');
                 
                 const blob = await response.blob();
@@ -872,16 +756,11 @@
                     reader.onloadend = () => resolve(reader.result);
                     reader.readAsDataURL(blob);
                 });
-            } catch (error) {
-                console.warn("Fallo al descargar imagen para PDF:", error);
-                return null;
-            }
+            } catch (error) { return null; }
         }
 
         async function obtenerLogoBase64() {
-            try {
-                return await obtenerImagenBase64Segura(URL_LOGO_EMPRESA);
-            } catch(e) { return null; }
+            try { return await obtenerImagenBase64Segura(URL_LOGO_EMPRESA); } catch(e) { return null; }
         }
 
         function toggleOverlay(show, text="Procesando...") {
@@ -890,40 +769,53 @@
             show ? overlay.classList.replace('hidden', 'flex') : overlay.classList.replace('flex', 'hidden');
         }
 
+        function iniciarTutorial(forzarRepeticion = false) {
+            const tutorialVisto = localStorage.getItem('avas_tutorial_peas_v2');
+            if (tutorialVisto === 'true' && !forzarRepeticion) return;
+
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true, animate: true,
+                doneBtnText: 'Entendido', nextBtnText: 'Siguiente', prevBtnText: 'Anterior',
+                progressText: 'Paso {{current}} de {{total}}',
+                steps: [
+                    { popover: { title: '¡Bienvenido a la Plataforma!', description: 'Haremos un recorrido rápido de las nuevas funciones de grado ingenieril.' } },
+                    { element: '#selectorFicha', popover: { title: 'Buscador de Inspecciones', description: 'Busca por FID cualquier inspección para revisar sus datos al instante.' } },
+                    { element: '#fichaDetalle', popover: { title: 'Ficha Detallada & Lightbox', description: 'Visualiza la evidencia. ¡Haz clic en las fotos para verlas en pantalla completa!' } },
+                    { element: '#contenedorFiltros', popover: { title: 'Filtros Rápidos Inteligentes', description: 'Usta estos botones para filtrar automáticamente por el último día, semana o definir un rango exacto.' } },
+                    { element: '#contenedorTabla', popover: { title: 'Tabla Interactiva (Sorting)', description: 'Haz clic en las cabeceras (ej. FID o Nivel) para ordenar los datos. Haz clic en las filas para abrir los detalles.' } },
+                    { element: '#contenedorGrafico', popover: { title: 'Gráfico Analítico', description: 'Observa la evolución. Los puntos ahora muestran el FID y las lluvias se ven como barras para cruzar datos fácilmente.' } },
+                    { element: '#btnDescargarReporte', popover: { title: 'Reporte Maestro (ISO)', description: 'Genera un documento PDF corporativo con códigos QR, Índice interactivo, Resumen KPI y la gráfica actual.' } },
+                    { element: '#btnDarkMode', popover: { title: 'Modo Oscuro', description: 'Protege tu vista cambiando al modo nocturno con este botón.' } }
+                ],
+                onDestroyStarted: () => {
+                    localStorage.setItem('avas_tutorial_peas_v2', 'true');
+                    driverObj.destroy();
+                }
+            });
+            driverObj.drive();
+        }
+
         function dibujarImagenConRatio(doc, base64Data, xBase, yBase, boxWidth, boxHeight, alignment = 'center', esLogo = false) {
             if (base64Data) {
                 try {
                     const imgProps = doc.getImageProperties(base64Data);
                     const ratio = imgProps.height / imgProps.width;
-                    
-                    let finalW = boxWidth;
-                    let finalH = boxWidth * ratio;
+                    let finalW = boxWidth; let finalH = boxWidth * ratio;
 
-                    if (finalH > boxHeight) {
-                        finalH = boxHeight;
-                        finalW = boxHeight / ratio;
-                    }
-
+                    if (finalH > boxHeight) { finalH = boxHeight; finalW = boxHeight / ratio; }
                     let offsetX = xBase;
-                    if (alignment === 'center') {
-                        offsetX = xBase + (boxWidth - finalW) / 2;
-                    } else if (alignment === 'right') {
-                        offsetX = xBase + (boxWidth - finalW);
-                    }
+                    if (alignment === 'center') offsetX = xBase + (boxWidth - finalW) / 2;
+                    else if (alignment === 'right') offsetX = xBase + (boxWidth - finalW);
                     
                     let offsetY = yBase + (boxHeight - finalH) / 2;
-                    
                     let imgFormat = 'JPEG';
                     if (base64Data.match(/data:image\/png/i)) imgFormat = 'PNG';
                     else if (base64Data.match(/data:image\/webp/i)) imgFormat = 'WEBP';
                     
                     doc.addImage(base64Data, imgFormat, offsetX, offsetY, finalW, finalH);
-                } catch (e) {
-                    manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo);
-                }
-            } else {
-                manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo);
-            }
+                } catch (e) { manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo); }
+            } else { manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo); }
         }
 
         function manejarErrorImagen(doc, xBase, yBase, boxWidth, boxHeight, esLogo) {
@@ -940,90 +832,15 @@
         function dibujarPieYEncabezado(doc, numeroPagina, totalPaginas, esPortada = false) {
             if (!esPortada) {
                 dibujarImagenConRatio(doc, cachedLogoBase64, 14, 8, 40, 15, 'left', true);
+                doc.setFontSize(8); doc.setTextColor(100); doc.setFont("helvetica", "normal");
+                doc.text("Cód: AVAS-REP-PEAS-01 | Rev: 0", 196, 12, { align: 'right' });
             }
             const pageHeight = doc.internal.pageSize.height;
             doc.setDrawColor(200, 200, 200);
             doc.line(14, pageHeight - 12, 196, pageHeight - 12); 
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
-            doc.setTextColor(100, 100, 100);
+            doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100);
             doc.text("Elaborado por Ingeniería AVAS SpA", 14, pageHeight - 7);
-            if (totalPaginas > 0) {
-                doc.text(`Página ${numeroPagina} de ${totalPaginas}`, 196, pageHeight - 7, { align: 'right' });
-            }
-        }
-
-        async function generarPaginaFicha(doc, registro, yBaseOffset = 20) {
-            doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
-            doc.text(`Ficha de Inspección Detallada - FID: ${registro.fid}`, 14, yBaseOffset);
-            
-            const estado = obtenerEstadoSemaforo(registro.nivel_antes);
-            doc.setFillColor(...estado.pdfBg);
-            doc.roundedRect(165, yBaseOffset - 5, 31, 7, 2, 2, 'F');
-            doc.setFontSize(9); doc.setTextColor(...estado.pdfText);
-            doc.text(estado.texto, 180.5, yBaseOffset, { align: 'center' });
-            
-            doc.setFillColor(241, 245, 249);
-            doc.setDrawColor(203, 213, 225);
-            doc.roundedRect(14, yBaseOffset + 5, 182, 40, 3, 3, 'FD'); 
-            
-            doc.setFontSize(10); doc.setTextColor(71, 85, 105);
-            doc.setFont("helvetica", "bold");
-            doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("Hora:", 80, yBaseOffset + 12);
-            doc.text("Operador:", 135, yBaseOffset + 12);
-            doc.text("Nivel Hallado:", 18, yBaseOffset + 19); doc.text("Nivel Post-Agot.:", 80, yBaseOffset + 19);
-            doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
-            doc.text("Observación:", 18, yBaseOffset + 26);
-            
-            doc.setFont("helvetica", "normal"); doc.setTextColor(15, 23, 42); 
-            doc.text(registro.fecha || '-', 35, yBaseOffset + 12);
-            doc.text(registro.hora || '-', 95, yBaseOffset + 12);
-            doc.text(registro.operador || '-', 155, yBaseOffset + 12);
-            doc.text(`${registro.lluvia} mm`, 160, yBaseOffset + 19);
-            
-            doc.setTextColor(37, 99, 235); doc.setFont("helvetica", "bold");
-            doc.text(`${registro.nivel_antes} m`, 45, yBaseOffset + 19);
-            doc.setTextColor(5, 150, 105); 
-            doc.text(`${registro.nivel_despues} m`, 110, yBaseOffset + 19);
-            
-            doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "normal");
-            const splitObs = doc.splitTextToSize(registro.observacion || '-', 135);
-            doc.text(splitObs, 45, yBaseOffset + 26);
-
-            let yFotos = yBaseOffset + 53;
-            doc.setFont("helvetica", "bold");
-            doc.text("Registro Fotográfico Inicial", 55, yFotos, { align: "center" });
-            doc.text("Registro Fotográfico Final", 155, yFotos, { align: "center" });
-
-            const b64Antes = await obtenerImagenBase64Segura(registro.foto_antes);
-            const b64Despues = await obtenerImagenBase64Segura(registro.foto_despues);
-
-            const photoW = 80, photoH = 110, yPhotoStart = yFotos + 5;
-            dibujarImagenConRatio(doc, b64Antes, 15, yPhotoStart, photoW, photoH);
-            dibujarImagenConRatio(doc, b64Despues, 115, yPhotoStart, photoW, photoH);
-        }
-
-        async function descargarFichaActual() {
-            const selector = document.getElementById('selectorFicha');
-            const fid = selector.value;
-            const registro = registrosGlobales.find(r => r.fid === String(fid));
-            
-            if (!registro) return alert("Selecciona una inspección.");
-
-            toggleOverlay(true, `Construyendo Ficha ${fid}...`);
-
-            try {
-                const doc = new jsPDF();
-                await generarPaginaFicha(doc, registro, 35);
-                dibujarPieYEncabezado(doc, 1, 1, false);
-
-                const nombreArchivo = `Ficha_${fid}_${registro.fecha.replace(/\//g, '-')}_${registro.hora.replace(/:/g, '-')}.pdf`;
-                doc.save(nombreArchivo);
-            } catch (error) {
-                console.error(error); alert("Error al generar PDF.");
-            } finally {
-                toggleOverlay(false);
-            }
+            if (totalPaginas > 0) doc.text(`Página ${numeroPagina} de ${totalPaginas}`, 196, pageHeight - 7, { align: 'right' });
         }
 
         async function descargarReporte() {
@@ -1033,100 +850,241 @@
             try {
                 const doc = new jsPDF();
                 const totalFichas = datosFiltrados.length;
+                const fInicio = datosFiltrados[datosFiltrados.length - 1].fecha;
+                const fFin = datosFiltrados[0].fecha;
                 
-                // PÁGINA 1
-                dibujarImagenConRatio(doc, cachedLogoBase64, 105 - 35, 30, 70, 30, 'center', true);
+                // PORTADA (Página 1)
+                dibujarImagenConRatio(doc, cachedLogoBase64, 105 - 35, 40, 70, 30, 'center', true);
                 doc.setFontSize(26); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
-                doc.text("Reporte de Inspección Diaria", 105, 80, { align: "center" });
-                doc.setFontSize(20); doc.text("PEAS Peumayén", 105, 95, { align: "center" });
+                doc.text("Reporte de Inspección Diaria", 105, 90, { align: "center" });
+                doc.setFontSize(20); doc.text("PEAS Peumayén", 105, 105, { align: "center" });
+                
                 doc.setFontSize(12); doc.setTextColor(100); doc.setFont("helvetica", "normal");
+                doc.text(`Período: ${fInicio} al ${fFin}`, 105, 130, { align: "center" });
+                doc.text(`Emisión: ${new Date().toLocaleDateString()}`, 105, 140, { align: "center" });
                 
-                // Ordenar cronologicamente para sacar fecha de inicio y fin real
-                const datosOrdenados = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
-                const fInicio = datosOrdenados[0].fecha;
-                const fFin = datosOrdenados[datosOrdenados.length - 1].fecha;
+                doc.setDrawColor(200); doc.roundedRect(65, 160, 80, 25, 2, 2);
+                doc.setFontSize(9); doc.text("Documento Controlado", 105, 166, {align: 'center'});
+                doc.setFont("helvetica", "bold"); doc.text("Cód: AVAS-REP-PEAS-01", 105, 172, {align: 'center'});
+                doc.text("Rev: 0 | Nivel: Confidencial", 105, 178, {align: 'center'});
 
-                doc.text(`Período de Análisis: ${fInicio} al ${fFin}`, 105, 120, { align: "center" });
-                doc.text(`Fecha de Emisión: ${new Date().toLocaleDateString()}`, 105, 130, { align: "center" });
-                doc.text(`Total Registros Procesados: ${totalFichas}`, 105, 140, { align: "center" });
-                doc.text(`Elaborado por Ingeniería AVAS SpA`, 105, 150, { align: "center" });
+                const qr = new QRious({ value: window.location.href, size: 150 });
+                doc.addImage(qr.toDataURL(), 'PNG', 105 - 20, 210, 40, 40);
+                doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.text("Escanear para verificar datos en vivo", 105, 255, {align: 'center'});
+
+                // ÍNDICE (Página 2) - Se llena al final
+                doc.addPage();
                 
-                doc.addPage(); // Indice reservado
+                // REGISTRO HISTÓRICO (Página 3)
                 doc.addPage();
                 const paginaInicioHistorico = doc.internal.getNumberOfPages();
-                
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
                 doc.text("1. Registro Histórico de Inspecciones", 14, 30); 
 
-                // Imprimir tal cual los ordenó el usuario
-                const tableData = datosFiltrados.map(r => {
-                    const est = obtenerEstadoSemaforo(r.nivel_antes);
-                    return [r.fid, est.texto, `${r.fecha} ${r.hora}`, r.operador, `${r.nivel_antes} -> ${r.nivel_despues}`, r.observacion];
-                });
+                const tableData = datosFiltrados.map(r => [
+                    r.fid, obtenerEstadoSemaforo(r.nivel_antes).texto, `${r.fecha} ${r.hora}`, r.operador, `${r.nivel_antes} -> ${r.nivel_despues}`, r.observacion
+                ]);
 
                 doc.autoTable({
                     startY: 38,
                     head: [['FID', 'Estado', 'Fecha/Hora', 'Operador', 'Niveles (m)', 'Observación']],
                     body: tableData,
-                    theme: 'striped',
-                    headStyles: { fillColor: [30, 58, 138] },
+                    theme: 'striped', headStyles: { fillColor: [30, 58, 138] },
                     styles: { fontSize: 7.5, font: 'helvetica' },
                     columnStyles: { 1: { fontStyle: 'bold' }, 5: { cellWidth: 55 } },
                     margin: { top: 30, bottom: 20 }
                 });
 
+                // KPIs Y GRÁFICOS (Página 4)
                 doc.addPage();
                 const paginaInicioGrafico = doc.internal.getNumberOfPages();
                 
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
                 doc.text("2. Evolución de Niveles y Precipitaciones", 14, 30);
+
+                let maxNivel = 0, totalLluvia = 0, countN = 0, countA = 0, countC = 0;
+                datosFiltrados.forEach(r => {
+                    if(r.nivel_antes > maxNivel) maxNivel = r.nivel_antes;
+                    totalLluvia += r.lluvia;
+                    if(r.nivel_antes < 1.5) countN++;
+                    else if(r.nivel_antes <= 2.5) countA++;
+                    else countC++;
+                });
+
+                // Cajas KPI
+                doc.setFillColor(241, 245, 249); doc.roundedRect(14, 38, 88, 25, 2, 2, 'F');
+                doc.setFontSize(10); doc.setTextColor(100); doc.text("Nivel Máximo en Período", 18, 46);
+                doc.setFontSize(18); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
+                doc.text(`${maxNivel} m`, 18, 56);
+
+                doc.setFillColor(241, 245, 249); doc.roundedRect(108, 38, 88, 25, 2, 2, 'F');
+                doc.setFontSize(10); doc.setTextColor(100); doc.setFont("helvetica", "normal"); doc.text("Lluvia Acumulada Total", 112, 46);
+                doc.setFontSize(18); doc.setTextColor(14, 165, 233); doc.setFont("helvetica", "bold");
+                doc.text(`${totalLluvia.toFixed(1)} mm`, 112, 56);
+
+                // CREAR GRÁFICO DONUT (Dona 3D con Leyenda Externa)
+                const canvasDonut = document.getElementById('hiddenDonutCanvas');
+                const ctxDonut = canvasDonut.getContext('2d');
                 
+                // Plugin para forzar fondo blanco absoluto en el Donut
+                const pluginFondoBlancoDona = {
+                    id: 'fondoBlancoDona',
+                    beforeDraw: (chart) => {
+                        const ctx = chart.canvas.getContext('2d');
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, chart.width, chart.height);
+                        ctx.restore();
+                    }
+                };
+                
+                const donutChart = new Chart(ctxDonut, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Normal', 'Alerta', 'Crítico'],
+                        datasets: [{ 
+                            data: [countN, countA, countC], 
+                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], 
+                            borderWidth: 3, // Borde más grueso para efecto 3D
+                            borderColor: '#ffffff', // Borde blanco
+                            hoverOffset: 15
+                        }]
+                    },
+                    options: { 
+                        animation: false,
+                        cutout: '65%',
+                        plugins: { 
+                            legend: { display: false },
+                            datalabels: { display: false } 
+                        } 
+                    },
+                    plugins: [pluginFondoBlancoDona] // Inyectamos el fondo blanco
+                });
+                
+                // Exportar explícitamente como JPEG para erradicar fondos negros
+                const donutBase64 = canvasDonut.toDataURL('image/jpeg', 1.0); 
+                donutChart.destroy();
+                
+                // Estampar Dona a la izquierda
+                dibujarImagenConRatio(doc, donutBase64, 15, 78, 80, 80, 'left');
+
+                // Leyenda Manual Dona
+                const totalDona = countN + countA + countC;
+                const getPct = (n) => totalDona > 0 ? ((n / totalDona) * 100).toFixed(1) : 0;
+                doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(30, 58, 138);
+                doc.text("Desglose Estadístico", 100, 95);
+                const drawLegendItem = (y, color, label, count, pct) => {
+                    doc.setFillColor(...color); doc.roundedRect(100, y, 6, 6, 1, 1, 'F');
+                    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(71, 85, 105); doc.text(`${label}:`, 110, y + 5);
+                    doc.setFont("helvetica", "normal"); doc.text(`${count} insp. (${pct}%)`, 130, y + 5);
+                };
+                drawLegendItem(105, [16, 185, 129], "Normal", countN, getPct(countN));
+                drawLegendItem(115, [245, 158, 11], "Alerta", countA, getPct(countA));
+                drawLegendItem(125, [239, 68, 68], "Crítico", countC, getPct(countC));
+
+                // ==========================================
+                // GRÁFICO PRINCIPAL
+                // ==========================================
                 const canvas = document.getElementById('graficoNiveles');
                 if (canvas) {
-                    graficoInstancia.options.plugins.fondoBlanco = true;
-                    graficoInstancia.update('none'); 
+                    // Clonamos el canvas en uno temporal para forzar el fondo blanco SÓLO para el PDF
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
+                    const tempCtx = tempCanvas.getContext('2d');
                     
-                    const chartBase64 = canvas.toDataURL('image/jpeg', 1.0);
-                    dibujarImagenConRatio(doc, chartBase64, 14, 40, 182, 110, 'center');
+                    // Rellenamos de blanco puro
+                    tempCtx.fillStyle = '#ffffff';
+                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                     
-                    graficoInstancia.options.plugins.fondoBlanco = false;
-                    graficoInstancia.update('none');
+                    // Dibujamos el gráfico web original sobre el fondo blanco
+                    tempCtx.drawImage(canvas, 0, 0);
+                    
+                    // Extraemos la imagen segura en formato JPEG
+                    const chartBase64 = tempCanvas.toDataURL('image/jpeg', 1.0);
+                    dibujarImagenConRatio(doc, chartBase64, 14, 155, 182, 110, 'center');
                 }
 
+                // FICHAS FOTOGRÁFICAS (Página 5+)
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
+                const registrosCronologicos = [...datosFiltrados].reverse();
 
-                // Las fichas se imprimen cronologicamente
-                for (let i = 0; i < datosOrdenados.length; i++) {
-                    const reg = datosOrdenados[i];
+                for (let i = 0; i < registrosCronologicos.length; i++) {
+                    const reg = registrosCronologicos[i];
                     document.getElementById('pdfOverlayText').textContent = `Agregando Ficha ${i+1} de ${totalFichas}...`;
                     doc.addPage();
-                    await generarPaginaFicha(doc, reg, 35); 
+                    
+                    const yBaseOffset = 35;
+                    doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
+                    doc.text(`Ficha de Inspección Detallada - FID: ${reg.fid}`, 14, yBaseOffset);
+                    
+                    const estado = obtenerEstadoSemaforo(reg.nivel_antes);
+                    doc.setFillColor(...estado.pdfBg); doc.roundedRect(165, yBaseOffset - 5, 31, 7, 2, 2, 'F');
+                    doc.setFontSize(9); doc.setTextColor(...estado.pdfText); doc.text(estado.texto, 180.5, yBaseOffset, { align: 'center' });
+                    
+                    doc.setFillColor(241, 245, 249); doc.setDrawColor(203, 213, 225);
+                    doc.roundedRect(14, yBaseOffset + 5, 182, 40, 3, 3, 'FD'); 
+                    
+                    doc.setFontSize(10); doc.setTextColor(71, 85, 105); doc.setFont("helvetica", "bold");
+                    doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("Hora:", 80, yBaseOffset + 12); doc.text("Operador:", 135, yBaseOffset + 12);
+                    doc.text("Nivel Hallado:", 18, yBaseOffset + 19); doc.text("Nivel Post-Agot.:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
+                    doc.text("Observación:", 18, yBaseOffset + 26);
+                    
+                    doc.setFont("helvetica", "normal"); doc.setTextColor(15, 23, 42); 
+                    doc.text(reg.fecha || '-', 35, yBaseOffset + 12); doc.text(reg.hora || '-', 95, yBaseOffset + 12); doc.text(reg.operador || '-', 155, yBaseOffset + 12);
+                    
+                    // Resalte Extremo Lluvia
+                    if(reg.lluvia > 15) { doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); }
+                    doc.text(`${reg.lluvia} mm`, 160, yBaseOffset + 19);
+                    
+                    // Resalte Extremo Nivel
+                    if(reg.nivel_antes > 2.5) { doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); }
+                    else { doc.setTextColor(37, 99, 235); doc.setFont("helvetica", "bold"); }
+                    doc.text(`${reg.nivel_antes} m`, 45, yBaseOffset + 19);
+                    
+                    doc.setTextColor(5, 150, 105); doc.text(`${reg.nivel_despues} m`, 110, yBaseOffset + 19);
+                    
+                    doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "normal");
+                    doc.text(doc.splitTextToSize(reg.observacion || '-', 135), 45, yBaseOffset + 26);
+
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Registro Fotográfico Inicial", 55, yBaseOffset + 53, { align: "center" });
+                    doc.text("Registro Fotográfico Final", 155, yBaseOffset + 53, { align: "center" });
+
+                    const b64Antes = await obtenerImagenBase64Segura(reg.foto_antes);
+                    const b64Despues = await obtenerImagenBase64Segura(reg.foto_despues);
+                    dibujarImagenConRatio(doc, b64Antes, 15, yBaseOffset + 58, 80, 110);
+                    dibujarImagenConRatio(doc, b64Despues, 115, yBaseOffset + 58, 80, 110);
                 }
 
                 const paginasTotales = doc.internal.getNumberOfPages();
-
                 for (let i = 1; i <= paginasTotales; i++) {
                     doc.setPage(i);
-                    dibujarPieYEncabezado(doc, i, paginasTotales, (i === 1));
+                    dibujarPieYEncabezado(doc, i, paginasTotales, i === 1);
                 }
 
+                // ÍNDICE INTERACTIVO
                 doc.setPage(2);
                 doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(30, 58, 138);
                 doc.text("Índice de Contenidos", 14, 45);
-
-                doc.setFont("helvetica", "normal"); doc.setFontSize(12); doc.setTextColor(50);
-                const lider = " ....................................................................................................... ";
                 
-                const printIndexLine = (num, title, pageY, targetPage) => {
-                    doc.setFont("helvetica", "bold"); doc.text(`${num}.`, 14, pageY);
-                    doc.setFont("helvetica", "normal"); doc.text(`${title}`, 22, pageY);
-                    doc.setTextColor(150); doc.text(lider.substring(0, 80 - title.length), 22 + doc.getTextWidth(title) + 2, pageY);
-                    doc.setTextColor(50); doc.text(`Pág ${targetPage}`, 180, pageY);
+                const drawInteractiveLink = (num, title, y, targetPage) => {
+                    doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(30, 58, 138);
+                    doc.text(`${num}.`, 14, y);
+                    doc.setFont("helvetica", "normal"); doc.text(`${title}`, 22, y);
+                    doc.setTextColor(150); doc.text(" ....................................................................................................... ".substring(0, 80 - title.length), 22 + doc.getTextWidth(title) + 2, y);
+                    doc.setTextColor(50); doc.text(`Pág ${targetPage}`, 180, y);
+                    // Hitbox invisible para el enlace
+                    doc.link(14, y - 5, 180, 8, { pageNumber: targetPage });
                 };
 
-                printIndexLine("1", "Registro Histórico de Inspecciones", 65, paginaInicioHistorico);
-                printIndexLine("2", "Evolución Gráfica de Niveles", 80, paginaInicioGrafico);
-                printIndexLine("3", "Fichas de Inspección Fotográfica", 95, paginaInicioFichas);
+                drawInteractiveLink("1", "Registro Histórico de Inspecciones", 65, paginaInicioHistorico);
+                drawInteractiveLink("2", "Evolución Gráfica y Resumen Ejecutivo", 80, paginaInicioGrafico);
+                drawInteractiveLink("3", "Fichas de Inspección Fotográfica", 95, paginaInicioFichas);
+                
+                doc.setFontSize(9); doc.setTextColor(100);
+                doc.text("* Haga clic en cualquier sección para navegar directamente.", 14, 110);
 
                 doc.save(`Reporte_PEAS_${fInicio}_al_${fFin}.pdf`);
 
