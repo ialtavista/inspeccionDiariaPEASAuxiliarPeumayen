@@ -656,6 +656,7 @@
                 },
                 plugins: [pluginFondoBlancoPDF, ChartDataLabels],
                 options: {
+                    devicePixelRatio: 4, // <-- ¡ESTA ES LA MAGIA! Multiplica x4 la resolución interna del gráfico
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
                         fondoBlanco: false, 
@@ -1005,7 +1006,7 @@
                     const chartBase64 = tempCanvas.toDataURL('image/jpeg', 1.0);
                     
                     // MODIFICACIÓN: Subimos el eje Y a 130 y aumentamos el alto a 145 para que ocupe todo el ancho
-                    dibujarImagenConRatio(doc, chartBase64, 14, 130, 182, 145, 'center');
+                    dibujarImagenConRatio(doc, chartBase64, 14, 130, 182, 160, 'center');
                 }
 
                 // FICHAS FOTOGRÁFICAS (Página 5+)
