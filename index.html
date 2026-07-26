@@ -1003,7 +1003,9 @@
                     
                     // Extraemos la imagen segura en formato JPEG
                     const chartBase64 = tempCanvas.toDataURL('image/jpeg', 1.0);
-                    dibujarImagenConRatio(doc, chartBase64, 14, 155, 182, 110, 'center');
+                    
+                    // MODIFICACIÓN: Subimos el eje Y a 130 y aumentamos el alto a 145 para que ocupe todo el ancho
+                    dibujarImagenConRatio(doc, chartBase64, 14, 130, 182, 145, 'center');
                 }
 
                 // FICHAS FOTOGRÁFICAS (Página 5+)
