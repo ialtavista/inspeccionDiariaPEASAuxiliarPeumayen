@@ -670,6 +670,7 @@
         function actualizarGrafico() {
             const ctx = document.getElementById('graficoNiveles').getContext('2d');
             
+            // EL GRÁFICO SIEMPRE DEBE SER CRONOLÓGICO
             const datosCronologicos = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
 
             const dataAntes = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
@@ -682,6 +683,7 @@
             const gridColor = isDark ? '#334155' : '#f1f5f9';
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
+            // Mantenemos fondo blanco sólido EXCLUSIVAMENTE para exportar perfecto a PDF
             const pluginFondoBlancoPDF = {
                 id: 'fondoBlanco',
                 beforeDraw: (chart) => {
@@ -691,6 +693,33 @@
                     ctx.globalCompositeOperation = 'destination-over';
                     ctx.fillStyle = 'white'; 
                     ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                }
+            };
+
+            // NUEVO PLUGIN: Dibuja la línea roja forzada cruzando toda la pantalla cuando hay solo 1 dato
+            const pluginLineaLimite = {
+                id: 'lineaLimite',
+                beforeDatasetsDraw: (chart) => {
+                    if (datosCronologicos.length !== 1) return; // Solo actuar si hay 1 solo registro
+                    
+                    const meta = chart.getDatasetMeta(2); // Índice 2 corresponde a "Límite Pozo (3m)"
+                    if (meta.hidden) return; // Respetar si el usuario oculta la línea desde la leyenda
+
+                    const ctx = chart.ctx;
+                    const yAxis = chart.scales.yNivel;
+                    const xAxis = chart.scales.x;
+                    if (!yAxis || !xAxis) return;
+                    
+                    const yPixel = yAxis.getPixelForValue(3.0);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(xAxis.left, yPixel);
+                    ctx.lineTo(xAxis.right, yPixel);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.setLineDash([5, 5]);
+                    ctx.stroke();
                     ctx.restore();
                 }
             };
@@ -735,7 +764,7 @@
                         }
                     ]
                 },
-                plugins: [pluginFondoBlancoPDF, ChartDataLabels],
+                plugins: [pluginFondoBlancoPDF, pluginLineaLimite, ChartDataLabels],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
