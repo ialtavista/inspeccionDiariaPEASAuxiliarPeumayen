@@ -1238,22 +1238,39 @@
                     const pdfBase64 = doc.output('datauristring');
                     const nombreArchivo = `Reporte_PEAS_${fInicio}_al_${fFin}.pdf`;
                     
-                    // Reemplaza ESTA_URL por la URL que copiaste en el Paso 1
+                    // Asegúrate de pegar tu nueva URL de la implementación aquí
                     const URL_DEL_SCRIPT = "TU_URL_DE_APPS_SCRIPT_AQUI"; 
 
-                    await fetch(URL_DEL_SCRIPT, {
-                        method: 'POST',
-                        mode: 'no-cors', // Evita bloqueos de seguridad del navegador al enviar a Google
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            pdfBase64: pdfBase64,
-                            filename: nombreArchivo,
-                            emailDestino: destinatario
-                        })
-                    });
+                    // Empaquetamos los datos como un formulario (la forma más compatible con Google Script)
+                    const payload = {
+                        pdfBase64: pdfBase64,
+                        filename: nombreArchivo,
+                        emailDestino: destinatario
+                    };
 
-                    toggleOverlay(false);
-                    alert("¡Reporte enviado exitosamente por correo electrónico!");
+                    try {
+                        const response = await fetch(URL_DEL_SCRIPT, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8', // Google prefiere text/plain para evitar errores de CORS preventivos
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+                        toggleOverlay(false);
+
+                        if (result.status === "success") {
+                            alert("¡Reporte enviado exitosamente por correo electrónico a " + destinatario + "!");
+                        } else {
+                            alert("Hubo un problema al enviar: " + result.message);
+                            console.error("Error del servidor Google:", result.message);
+                        }
+                    } catch (fetchError) {
+                        toggleOverlay(false);
+                        alert("Error de conexión al enviar el correo. Revisa la consola.");
+                        console.error("Error de Fetch:", fetchError);
+                    }
                 }
 
             } catch (error) {
