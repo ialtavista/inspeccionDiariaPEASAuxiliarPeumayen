@@ -268,7 +268,7 @@
             <div id="contenedorGrafico" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[320px] transition-colors">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                    Evolución de Niveles en Cámara de Reja y Precipitación Diaria
+                    Evolución del nivel en cámara de rejas y precipitación diaria
                 </h2>
                 <div class="relative flex-1 w-full min-h-[260px]">
                     <canvas id="graficoNiveles"></canvas>
@@ -279,7 +279,6 @@
     </main>
 
     <script>
-        // CONFIGURACIÓN CORE
         const SHEET_ID = '17AdORP1p500PO9WOir7BmptH424-NKF3oiHA9z13VoM';
         const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
         const URL_LOGO_EMPRESA = 'LogoAvas.jpg'; 
@@ -296,7 +295,6 @@
         let sortCol = 'fecha';
         let sortAsc = false; 
 
-        // Variables de Galería (Slider)
         let idxSliderAntes = 0;
         let idxSliderDespues = 0;
         let fotosActualesAntes = [];
@@ -358,7 +356,6 @@
             let min1 = h1 * 60 + m1;
             let min2 = h2 * 60 + m2;
             
-            // Compensación si el trabajo cruza la medianoche
             if (min2 < min1) min2 += 24 * 60; 
             
             const diff = min2 - min1;
@@ -788,11 +785,11 @@
                 steps: [
                     { popover: { title: '¡Bienvenido!', description: 'Haremos un recorrido rápido por la aplicación.' } },
                     { element: '#selectorFicha', popover: { title: 'Busca por Inspección', description: 'Busca por FID (Identificador único) cualquier inspección para revisar sus datos al instante.' } },
-                    { element: '#fichaDetalle', popover: { title: 'Ficha de Inspección Detallada', description: 'Visualiza la evidencia. ¡Navega por las galerías con las flechas y haz clic para expandirlas!' } },
+                    { element: '#fichaDetalle', popover: { title: 'Ficha de InspecciónDetallada', description: 'Visualiza la evidencia. ¡Navega por las galerías con las flechas y haz clic para expandirlas!' } },
                     { element: '#contenedorFiltros', popover: { title: 'Filtros Rápidos Inteligentes', description: 'Usa estos botones para filtrar automáticamente por el último día, semana o definir un rango de fechas.' } },
                     { element: '#contenedorTabla', popover: { title: 'Tabla Interactiva de Registros Históricos', description: 'Haz clic en las cabeceras de cada columna para ordenar los datos. Haz clic en las filas para abrir los detalles de cada inspección.' } },
-                    { element: '#contenedorGrafico', popover: { title: 'Evolución de Niveles', description: 'Observa la evolución temporal del nivel en la cámara de rejas y su relación con las precipitaciones diarias.' } },
-                    { element: '#btnDescargarReporte', popover: { title: 'Reporte general', description: 'Genera un documento PDF resumen de todas las inspecciones filtradas. Incluye KPI´s y gráficos para resumir los datos.' } },
+                    { element: '#contenedorGrafico', popover: { title: 'Gráfico de nivel en cámara de rejas v/s precipiraciones', description: 'Observa la evolución temporal del nivel en la cámara de rejas y su relación con las precipiraciones diarias.' } },
+                    { element: '#btnDescargarReporte', popover: { title: 'Reporte general', description: 'Genera un documento PDF resumen de todas las inspecciones filtradas según lo asignado en la Tabla Interactiva de Registros Históricos. Incluye KPI´s y gráficos para resumir los datos ' } },
                     { element: '#btnDarkMode', popover: { title: 'Modo Oscuro', description: 'Protege tu vista cambiando al modo nocturno con este botón.' } },
                     { element: '#btnAyudaTutorial', popover: { title: 'Repasar Tutorial', description: 'Si tienes dudas, puedes volver a ver este recorrido haciendo clic aquí en cualquier momento.' } }
                 ],
@@ -928,9 +925,7 @@
                 const fInicio = datosFiltrados[datosFiltrados.length - 1].fecha;
                 const fFin = datosFiltrados[0].fecha;
                 
-                // ==========================================
                 // PORTADA (Página 1)
-                // ==========================================
                 dibujarImagenConRatio(doc, cachedLogoBase64, 105 - 35, 40, 70, 30, 'center', true);
                 doc.setFontSize(26); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
                 doc.text("Reporte de Inspección Diaria", 105, 90, { align: "center" });
@@ -950,9 +945,7 @@
                 doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.text("Escanear para verificar datos en vivo", 105, 255, {align: 'center'});
                 doc.addPage();
                 
-                // ==========================================
                 // REGISTRO HISTÓRICO
-                // ==========================================
                 doc.addPage();
                 const paginaInicioHistorico = doc.internal.getNumberOfPages();
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
@@ -972,9 +965,7 @@
                     margin: { top: 30, bottom: 20 }
                 });
 
-                // ==========================================
                 // KPIs Y GRÁFICOS
-                // ==========================================
                 doc.addPage();
                 const paginaInicioGrafico = doc.internal.getNumberOfPages();
                 
@@ -1010,6 +1001,7 @@
                     else tiempoPromedioTexto = `${m} min`;
                 }
 
+                // Cajas KPI
                 doc.setFillColor(241, 245, 249); doc.roundedRect(14, 38, 88, 25, 2, 2, 'F');
                 doc.setFontSize(10); doc.setTextColor(100); doc.text("Nivel Máximo de Cámara de Reja en Período", 18, 46);
                 doc.setFontSize(18); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
@@ -1020,6 +1012,7 @@
                 doc.setFontSize(18); doc.setTextColor(14, 165, 233); doc.setFont("helvetica", "bold");
                 doc.text(tiempoPromedioTexto, 112, 56);
 
+                // GRÁFICO DONA
                 const canvasDonut = document.getElementById('hiddenDonutCanvas');
                 const ctxDonut = canvasDonut.getContext('2d');
                 
@@ -1044,20 +1037,27 @@
                 
                 const donutBase64 = canvasDonut.toDataURL('image/jpeg', 1.0); 
                 donutChart.destroy();
-                dibujarImagenConRatio(doc, donutBase64, 15, 78, 80, 80, 'left');
+                dibujarImagenConRatio(doc, donutBase64, 15, 75, 70, 70, 'left');
 
+                // Títulos en formato exacto e igualitario para ambas secciones
+                doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(30, 58, 138);
+                
+                // Título de Dona (Y=85) y Textos (Y=95...)
+                doc.text("Resumen del Nivel Inicial PEAS", 95, 85);
                 const totalDona = countN + countA + countC;
                 const getPct = (n) => totalDona > 0 ? ((n / totalDona) * 100).toFixed(1) : 0;
-                doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(30, 58, 138);
-                doc.text("Resumen del Nivel Inicial PEAS", 100, 95);
                 const drawLegendItem = (y, color, label, count, pct) => {
-                    doc.setFillColor(...color); doc.roundedRect(100, y, 6, 6, 1, 1, 'F');
-                    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(71, 85, 105); doc.text(`${label}:`, 110, y + 5);
-                    doc.setFont("helvetica", "normal"); doc.text(`${count} insp. (${pct}%)`, 130, y + 5);
+                    doc.setFillColor(...color); doc.roundedRect(95, y, 6, 6, 1, 1, 'F');
+                    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(71, 85, 105); doc.text(`${label}:`, 105, y + 5);
+                    doc.setFont("helvetica", "normal"); doc.text(`${count} insp. (${pct}%)`, 125, y + 5);
                 };
-                drawLegendItem(105, [16, 185, 129], "Normal", countN, getPct(countN));
-                drawLegendItem(115, [245, 158, 11], "Alerta", countA, getPct(countA));
-                drawLegendItem(125, [239, 68, 68], "Crítico", countC, getPct(countC));
+                drawLegendItem(95, [16, 185, 129], "Normal", countN, getPct(countN));
+                drawLegendItem(105, [245, 158, 11], "Alerta", countA, getPct(countA));
+                drawLegendItem(115, [239, 68, 68], "Crítico", countC, getPct(countC));
+
+                // Título Gráfico Principal (Y=157) - El mismo estilo exacto
+                doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(30, 58, 138);
+                doc.text("Evolución de Niveles en Cámara de Reja y Precipitación Diaria", 14, 157);
 
                 // GRÁFICO PRINCIPAL
                 const datosCronologicosGrafico = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
@@ -1066,7 +1066,7 @@
                 const dataLluvia = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia }));
 
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 1800; tempCanvas.height = 1200; 
+                tempCanvas.width = 1800; tempCanvas.height = 1100; // Ajustado a la proporción visual
                 tempCanvas.style.display = 'none'; document.body.appendChild(tempCanvas);
                 const tempCtx = tempCanvas.getContext('2d');
 
@@ -1107,8 +1107,7 @@
                     options: {
                         devicePixelRatio: 2, animation: false, responsive: false,
                         plugins: {
-                            title: { display: true, text: 'Evolución de Niveles en Cámara de Reja y Precipitación Diaria', color: '#0f172a', font: { family: 'Inter', size: 30, weight: 'bold' }, padding: { bottom: 25 } },
-                            legend: { display: true, position: 'bottom', labels: { color: '#0f172a', font: { family: 'Inter', size: 24, weight: 'bold' }, usePointStyle: true, padding: 30 } },
+                            legend: { display: true, position: 'bottom', labels: { color: '#0f172a', font: { family: 'Inter', size: 28, weight: 'bold' }, usePointStyle: true, padding: 30 } },
                             datalabels: { display: true, align: 'top', anchor: 'top', color: '#1e40af', font: { family: 'Inter', size: 22, weight: 'bold' }, formatter: (val, ctx) => (ctx.datasetIndex === 1) ? `FID ${datosCronologicosGrafico[ctx.dataIndex].fid}` : '' }
                         },
                         scales: {
@@ -1122,11 +1121,11 @@
 
                 const chartBase64 = tempCanvas.toDataURL('image/jpeg', 1.0);
                 chartPdf.destroy(); document.body.removeChild(tempCanvas);
-                dibujarImagenConRatio(doc, chartBase64, 14, 160, 182, 120, 'center');
+                
+                // Dibujamos alineado Y=162. Distancia a Dona(Y=145) = 17. (Igual al KPI-Dona ~15)
+                dibujarImagenConRatio(doc, chartBase64, 14, 162, 182, 115, 'center');
 
-                // ==========================================
                 // FICHAS FOTOGRÁFICAS
-                // ==========================================
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
                 const registrosCronologicos = [...datosFiltrados].reverse();
 
@@ -1193,9 +1192,7 @@
                     dibujarPieYEncabezado(doc, i, paginasTotales, i === 1);
                 }
 
-                // ==========================================
                 // ÍNDICE INTERACTIVO
-                // ==========================================
                 doc.setPage(2);
                 doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(30, 58, 138);
                 doc.text("Índice de Contenidos", 14, 45);
