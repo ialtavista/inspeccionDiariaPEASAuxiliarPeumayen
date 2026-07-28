@@ -691,7 +691,7 @@
                 let p1 = parseFechaHora(datosCronologicos[0].fecha, datosCronologicos[0].hora);
                 let p2 = new Date(p1.getTime());
                 p1.setHours(p1.getHours() - 1); p2.setHours(p2.getHours() + 1);
-                dataLimite = [{x: p1, y: 3.0}, {x: p2, y: 3.0}];
+                dataLimite = [{x: p1, y: 2.0}, {x: p2, y: 2.0}];
             } else {
                 dataLimite = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 2.0 }));
             }
