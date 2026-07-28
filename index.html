@@ -268,7 +268,7 @@
             <div id="contenedorGrafico" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[320px] transition-colors">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                    Evolución del nivel en cámara de rejas y precipitación diaria
+                    Evolución de Niveles en Cámara de Reja y Precipitación Diaria
                 </h2>
                 <div class="relative flex-1 w-full min-h-[260px]">
                     <canvas id="graficoNiveles"></canvas>
@@ -738,7 +738,7 @@
                     },
                     scales: {
                         yNivel: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Nivel del Pozo (m)', color: textColor, font: {family: 'Inter', size: 11} }, grid: { color: gridColor }, suggestedMax: 3.5, ticks: { color: textColor } },
-                        yLluvia: { type: 'linear', position: 'right', beginAtZero: true, title: { display: true, text: 'Lluvia Caída (mm)', color: '#0ea5e9', font: {family: 'Inter', size: 11} }, grid: { drawOnChartArea: false }, suggestedMax: 30, ticks: { color: textColor } },
+                        yLluvia: { type: 'linear', position: 'right', beginAtZero: true, title: { display: true, text: 'Lluvia Caída Diaria (mm)', color: '#0ea5e9', font: {family: 'Inter', size: 11} }, grid: { drawOnChartArea: false }, suggestedMax: 30, ticks: { color: textColor } },
                         x: { type: 'time', time: { displayFormats: { minute: 'dd MMM HH:mm', hour: 'dd MMM HH:mm', day: 'dd MMM' } }, offset: true, grid: { display: false }, ticks: { color: textColor, maxTicksLimit: 8, font: {family: 'Inter', size: 10} } }
                     }
                 }
@@ -788,11 +788,11 @@
                 steps: [
                     { popover: { title: '¡Bienvenido!', description: 'Haremos un recorrido rápido por la aplicación.' } },
                     { element: '#selectorFicha', popover: { title: 'Busca por Inspección', description: 'Busca por FID (Identificador único) cualquier inspección para revisar sus datos al instante.' } },
-                    { element: '#fichaDetalle', popover: { title: 'Ficha de InspecciónDetallada', description: 'Visualiza la evidencia. ¡Navega por las galerías con las flechas y haz clic para expandirlas!' } },
+                    { element: '#fichaDetalle', popover: { title: 'Ficha de Inspección Detallada', description: 'Visualiza la evidencia. ¡Navega por las galerías con las flechas y haz clic para expandirlas!' } },
                     { element: '#contenedorFiltros', popover: { title: 'Filtros Rápidos Inteligentes', description: 'Usa estos botones para filtrar automáticamente por el último día, semana o definir un rango de fechas.' } },
                     { element: '#contenedorTabla', popover: { title: 'Tabla Interactiva de Registros Históricos', description: 'Haz clic en las cabeceras de cada columna para ordenar los datos. Haz clic en las filas para abrir los detalles de cada inspección.' } },
-                    { element: '#contenedorGrafico', popover: { title: 'Gráfico de nivel en cámara de rejas v/s precipiraciones', description: 'Observa la evolución temporal del nivel en la cámara de rejas y su relación con las precipiraciones diarias.' } },
-                    { element: '#btnDescargarReporte', popover: { title: 'Reporte general', description: 'Genera un documento PDF resumen de todas las inspecciones filtradas según lo asignado en la Tabla Interactiva de Registros Históricos. Incluye KPI´s y gráficos para resumir los datos ' } },
+                    { element: '#contenedorGrafico', popover: { title: 'Evolución de Niveles', description: 'Observa la evolución temporal del nivel en la cámara de rejas y su relación con las precipitaciones diarias.' } },
+                    { element: '#btnDescargarReporte', popover: { title: 'Reporte general', description: 'Genera un documento PDF resumen de todas las inspecciones filtradas. Incluye KPI´s y gráficos para resumir los datos.' } },
                     { element: '#btnDarkMode', popover: { title: 'Modo Oscuro', description: 'Protege tu vista cambiando al modo nocturno con este botón.' } },
                     { element: '#btnAyudaTutorial', popover: { title: 'Repasar Tutorial', description: 'Si tienes dudas, puedes volver a ver este recorrido haciendo clic aquí en cualquier momento.' } }
                 ],
@@ -871,8 +871,8 @@
                 doc.roundedRect(14, yBaseOffset + 5, 182, 45, 3, 3, 'FD'); 
                 
                 doc.setFontSize(10); doc.setTextColor(71, 85, 105); doc.setFont("helvetica", "bold");
-                doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("H. Inicio:", 80, yBaseOffset + 12); doc.text("H. Final:", 135, yBaseOffset + 12);
-                doc.text("Operador:", 18, yBaseOffset + 19); doc.text("Tiempo Ejec.:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
+                doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("Hora Inicio:", 80, yBaseOffset + 12); doc.text("Hora Final:", 135, yBaseOffset + 12);
+                doc.text("Operador:", 18, yBaseOffset + 19); doc.text("Tiempo en Faena:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
                 doc.text("Nivel Inicial C. Rejas:", 18, yBaseOffset + 26); doc.text("Nivel Final C. Rejas:", 80, yBaseOffset + 26); 
                 doc.text("Observación:", 18, yBaseOffset + 33);
                 
@@ -950,7 +950,9 @@
                 doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.text("Escanear para verificar datos en vivo", 105, 255, {align: 'center'});
                 doc.addPage();
                 
+                // ==========================================
                 // REGISTRO HISTÓRICO
+                // ==========================================
                 doc.addPage();
                 const paginaInicioHistorico = doc.internal.getNumberOfPages();
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
@@ -970,31 +972,53 @@
                     margin: { top: 30, bottom: 20 }
                 });
 
+                // ==========================================
                 // KPIs Y GRÁFICOS
+                // ==========================================
                 doc.addPage();
                 const paginaInicioGrafico = doc.internal.getNumberOfPages();
                 
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
-                doc.text("2. Evolución de Niveles en Cámara de Rejas y Precipitación Diaria", 14, 30);
+                doc.text("2. Resumen Estadístico de las Operaciones Ejecutadas", 14, 30);
 
-                let maxNivel = 0, totalLluvia = 0, countN = 0, countA = 0, countC = 0;
+                let maxNivel = 0, countN = 0, countA = 0, countC = 0;
+                let sumaMinutos = 0, actConTiempo = 0;
+
                 datosFiltrados.forEach(r => {
                     if(r.nivel_antes > maxNivel) maxNivel = r.nivel_antes;
-                    totalLluvia += r.lluvia;
                     if(r.nivel_antes < 1.5) countN++;
                     else if(r.nivel_antes <= 2.5) countA++;
                     else countC++;
+
+                    const [h1, m1] = (r.hora || "").split(':').map(Number);
+                    const [h2, m2] = (r.hora_final || "").split(':').map(Number);
+                    if(!isNaN(h1) && !isNaN(m1) && !isNaN(h2) && !isNaN(m2)){
+                        let min1 = h1 * 60 + m1;
+                        let min2 = h2 * 60 + m2;
+                        if(min2 < min1) min2 += 24 * 60;
+                        sumaMinutos += (min2 - min1);
+                        actConTiempo++;
+                    }
                 });
 
+                let tiempoPromedioTexto = "-";
+                if(actConTiempo > 0) {
+                    let prom = Math.round(sumaMinutos / actConTiempo);
+                    let h = Math.floor(prom / 60);
+                    let m = prom % 60;
+                    if(h > 0) tiempoPromedioTexto = `${h}h ${m}m`;
+                    else tiempoPromedioTexto = `${m} min`;
+                }
+
                 doc.setFillColor(241, 245, 249); doc.roundedRect(14, 38, 88, 25, 2, 2, 'F');
-                doc.setFontSize(10); doc.setTextColor(100); doc.text("Nivel Máximo en Período", 18, 46);
+                doc.setFontSize(10); doc.setTextColor(100); doc.text("Nivel Máximo de Cámara de Reja en Período", 18, 46);
                 doc.setFontSize(18); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
                 doc.text(`${maxNivel} m`, 18, 56);
 
                 doc.setFillColor(241, 245, 249); doc.roundedRect(108, 38, 88, 25, 2, 2, 'F');
-                doc.setFontSize(10); doc.setTextColor(100); doc.setFont("helvetica", "normal"); doc.text("Lluvia Acumulada Total", 112, 46);
+                doc.setFontSize(10); doc.setTextColor(100); doc.setFont("helvetica", "normal"); doc.text("Tiempo Promedio en Faena", 112, 46);
                 doc.setFontSize(18); doc.setTextColor(14, 165, 233); doc.setFont("helvetica", "bold");
-                doc.text(`${totalLluvia.toFixed(1)} mm`, 112, 56);
+                doc.text(tiempoPromedioTexto, 112, 56);
 
                 const canvasDonut = document.getElementById('hiddenDonutCanvas');
                 const ctxDonut = canvasDonut.getContext('2d');
@@ -1025,7 +1049,7 @@
                 const totalDona = countN + countA + countC;
                 const getPct = (n) => totalDona > 0 ? ((n / totalDona) * 100).toFixed(1) : 0;
                 doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(30, 58, 138);
-                doc.text("Desglose Estadístico", 100, 95);
+                doc.text("Resumen del Nivel Inicial PEAS", 100, 95);
                 const drawLegendItem = (y, color, label, count, pct) => {
                     doc.setFillColor(...color); doc.roundedRect(100, y, 6, 6, 1, 1, 'F');
                     doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(71, 85, 105); doc.text(`${label}:`, 110, y + 5);
@@ -1083,7 +1107,8 @@
                     options: {
                         devicePixelRatio: 2, animation: false, responsive: false,
                         plugins: {
-                            legend: { display: true, position: 'top', labels: { color: '#0f172a', font: { family: 'Inter', size: 28, weight: 'bold' }, usePointStyle: true, padding: 30 } },
+                            title: { display: true, text: 'Evolución de Niveles en Cámara de Reja y Precipitación Diaria', color: '#0f172a', font: { family: 'Inter', size: 30, weight: 'bold' }, padding: { bottom: 25 } },
+                            legend: { display: true, position: 'bottom', labels: { color: '#0f172a', font: { family: 'Inter', size: 24, weight: 'bold' }, usePointStyle: true, padding: 30 } },
                             datalabels: { display: true, align: 'top', anchor: 'top', color: '#1e40af', font: { family: 'Inter', size: 22, weight: 'bold' }, formatter: (val, ctx) => (ctx.datasetIndex === 1) ? `FID ${datosCronologicosGrafico[ctx.dataIndex].fid}` : '' }
                         },
                         scales: {
@@ -1099,7 +1124,9 @@
                 chartPdf.destroy(); document.body.removeChild(tempCanvas);
                 dibujarImagenConRatio(doc, chartBase64, 14, 160, 182, 120, 'center');
 
+                // ==========================================
                 // FICHAS FOTOGRÁFICAS
+                // ==========================================
                 const paginaInicioFichas = doc.internal.getNumberOfPages() + 1;
                 const registrosCronologicos = [...datosFiltrados].reverse();
 
@@ -1166,7 +1193,9 @@
                     dibujarPieYEncabezado(doc, i, paginasTotales, i === 1);
                 }
 
+                // ==========================================
                 // ÍNDICE INTERACTIVO
+                // ==========================================
                 doc.setPage(2);
                 doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(30, 58, 138);
                 doc.text("Índice de Contenidos", 14, 45);
@@ -1181,7 +1210,7 @@
                 };
 
                 drawInteractiveLink("1", "Registro Histórico de Inspecciones", 65, paginaInicioHistorico);
-                drawInteractiveLink("2", "Evolución Gráfica y Resumen Ejecutivo", 80, paginaInicioGrafico);
+                drawInteractiveLink("2", "Resumen Estadístico de las Operaciones Ejecutadas", 80, paginaInicioGrafico);
                 drawInteractiveLink("3", "Fichas de Inspección Fotográfica", 95, paginaInicioFichas);
                 
                 doc.setFontSize(9); doc.setTextColor(100);
