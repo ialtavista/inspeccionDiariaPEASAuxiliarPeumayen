@@ -139,8 +139,11 @@
                 
                 <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg mb-4 grid grid-cols-2 gap-y-3 gap-x-4 text-sm border border-slate-100 dark:border-slate-700">
                     <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">FID</span> <span id="detFid" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Fecha / Hora</span> <span id="detFechaHora" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Fecha</span> <span id="detFechaHora" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
                     
+                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Hora Inicio - Final</span> <span id="detHoras" class="font-bold text-slate-900 dark:text-white text-base"></span></div>
+                    <div><span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Tiempo Ejecución</span> <span id="detTiempo" class="font-bold text-blue-600 dark:text-blue-400 text-base"></span></div>
+
                     <div class="col-span-2">
                         <span class="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase">Operador Responsable</span> 
                         <span id="detOperador" class="font-medium text-slate-700 dark:text-slate-300"></span>
@@ -346,6 +349,26 @@
             return d;
         }
 
+        function calcularTiempoEjecucion(horaIni, horaFin) {
+            if (!horaIni || !horaFin) return '-';
+            const [h1, m1] = horaIni.split(':').map(Number);
+            const [h2, m2] = horaFin.split(':').map(Number);
+            if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return '-';
+            
+            let min1 = h1 * 60 + m1;
+            let min2 = h2 * 60 + m2;
+            
+            // Compensación si el trabajo cruza la medianoche
+            if (min2 < min1) min2 += 24 * 60; 
+            
+            const diff = min2 - min1;
+            const h = Math.floor(diff / 60);
+            const m = diff % 60;
+            
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m} min`;
+        }
+
         async function obtenerDatos(silencioso = false) {
             try {
                 const response = await fetch(GVIZ_URL);
@@ -378,14 +401,18 @@
                 });
                 
                 if (filaData.fid !== undefined && filaData.fid !== '') {
-                    // Agrupando las fotos en arreglos limpios ignorando celdas vacías
                     const fAntes = [filaData.foto_antes1, filaData.foto_antes2, filaData.foto_antes3].filter(f => f && String(f).trim() !== '');
                     const fDespues = [filaData.foto_despues1, filaData.foto_despues2, filaData.foto_despues3].filter(f => f && String(f).trim() !== '');
+                    
+                    const hInicio = String(filaData.hora_inicio || '');
+                    const hFinal = String(filaData.hora_final || '');
 
                     registrosGlobales.push({
                         fid: String(filaData.fid),
                         fecha: String(filaData.fecha || ''),
-                        hora: String(filaData.hora_inicio || ''), // Usamos hora_inicio
+                        hora: hInicio,
+                        hora_final: hFinal,
+                        tiempo_ejecucion: calcularTiempoEjecucion(hInicio, hFinal),
                         nivel_antes: parseFloat(filaData.nivel_antes) || 0,
                         nivel_despues: parseFloat(filaData.nivel_despues) || 0,
                         lluvia: parseFloat(filaData.lluvia) || 0,
@@ -576,7 +603,7 @@
                 tr.innerHTML = `
                     <td class="p-3 font-bold text-slate-900 dark:text-white">${reg.fid}</td>
                     <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${estado.bg} ${estado.text}">${estado.texto}</span></td>
-                    <td class="p-3">${reg.fecha} <span class="text-slate-400 dark:text-slate-500 text-xs ml-1">${reg.hora}</span></td>
+                    <td class="p-3">${reg.fecha} <div class="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">${reg.hora} a ${reg.hora_final} (${reg.tiempo_ejecucion})</div></td>
                     <td class="p-3 text-slate-600 dark:text-slate-400 text-xs">${reg.operador}</td>
                     <td class="p-3"><span class="text-blue-600 dark:text-blue-400 font-bold">${reg.nivel_antes}</span> <span class="text-slate-400 text-xs mx-1">-></span> <span class="text-emerald-600 dark:text-emerald-400 font-semibold">${reg.nivel_despues}</span></td>
                     <td class="p-3 truncate max-w-[150px]" title="${reg.observacion}">${reg.observacion}</td>
@@ -639,7 +666,10 @@
             badge.className = `ml-2 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-sm ${estado.bg} ${estado.text}`;
 
             document.getElementById('detFid').textContent = registro.fid;
-            document.getElementById('detFechaHora').textContent = `${registro.fecha} - ${registro.hora}`;
+            document.getElementById('detFechaHora').textContent = registro.fecha;
+            document.getElementById('detHoras').textContent = `${registro.hora} - ${registro.hora_final}`;
+            document.getElementById('detTiempo').textContent = registro.tiempo_ejecucion;
+            
             document.getElementById('detOperador').textContent = registro.operador;
             document.getElementById('detObs').textContent = registro.observacion;
             document.getElementById('detNivelAntes').textContent = registro.nivel_antes;
@@ -756,13 +786,13 @@
                 doneBtnText: 'Entendido', nextBtnText: 'Siguiente', prevBtnText: 'Anterior',
                 progressText: 'Paso {{current}} de {{total}}',
                 steps: [
-                    { popover: { title: '¡Bienvenido a la Plataforma!', description: 'Haremos un recorrido rápido de las nuevas funciones de grado ingenieril.' } },
-                    { element: '#selectorFicha', popover: { title: 'Buscador de Inspecciones', description: 'Busca por FID cualquier inspección para revisar sus datos al instante.' } },
-                    { element: '#fichaDetalle', popover: { title: 'Ficha Detallada & Lightbox', description: 'Visualiza la evidencia. ¡Navega por las galerías con las flechas y haz clic para expandirlas!' } },
-                    { element: '#contenedorFiltros', popover: { title: 'Filtros Rápidos Inteligentes', description: 'Usa estos botones para filtrar automáticamente por el último día, semana o definir un rango exacto.' } },
-                    { element: '#contenedorTabla', popover: { title: 'Tabla Interactiva (Sorting)', description: 'Haz clic en las cabeceras (ej. FID o Nivel) para ordenar los datos. Haz clic en las filas para abrir los detalles.' } },
-                    { element: '#contenedorGrafico', popover: { title: 'Gráfico Analítico', description: 'Observa la evolución. Los puntos ahora muestran el FID y las lluvias se ven como barras para cruzar datos fácilmente.' } },
-                    { element: '#btnDescargarReporte', popover: { title: 'Reporte Maestro (ISO)', description: 'Genera un documento PDF corporativo con códigos QR, Índice interactivo, Resumen KPI y la gráfica actual.' } },
+                    { popover: { title: '¡Bienvenido!', description: 'Haremos un recorrido rápido por la aplicación.' } },
+                    { element: '#selectorFicha', popover: { title: 'Busca por Inspección', description: 'Busca por FID (Identificador único) cualquier inspección para revisar sus datos al instante.' } },
+                    { element: '#fichaDetalle', popover: { title: 'Ficha de InspecciónDetallada', description: 'Visualiza la evidencia. ¡Navega por las galerías con las flechas y haz clic para expandirlas!' } },
+                    { element: '#contenedorFiltros', popover: { title: 'Filtros Rápidos Inteligentes', description: 'Usa estos botones para filtrar automáticamente por el último día, semana o definir un rango de fechas.' } },
+                    { element: '#contenedorTabla', popover: { title: 'Tabla Interactiva de Registros Históricos', description: 'Haz clic en las cabeceras de cada columna para ordenar los datos. Haz clic en las filas para abrir los detalles de cada inspección.' } },
+                    { element: '#contenedorGrafico', popover: { title: 'Gráfico de nivel en cámara de rejas v/s precipiraciones', description: 'Observa la evolución temporal del nivel en la cámara de rejas y su relación con las precipiraciones diarias.' } },
+                    { element: '#btnDescargarReporte', popover: { title: 'Reporte general', description: 'Genera un documento PDF resumen de todas las inspecciones filtradas según lo asignado en la Tabla Interactiva de Registros Históricos. Incluye KPI´s y gráficos para resumir los datos ' } },
                     { element: '#btnDarkMode', popover: { title: 'Modo Oscuro', description: 'Protege tu vista cambiando al modo nocturno con este botón.' } },
                     { element: '#btnAyudaTutorial', popover: { title: 'Repasar Tutorial', description: 'Si tienes dudas, puedes volver a ver este recorrido haciendo clic aquí en cualquier momento.' } }
                 ],
@@ -838,40 +868,45 @@
                 doc.setFontSize(9); doc.setTextColor(...estado.pdfText); doc.text(estado.texto, 180.5, yBaseOffset, { align: 'center' });
                 
                 doc.setFillColor(241, 245, 249); doc.setDrawColor(203, 213, 225);
-                doc.roundedRect(14, yBaseOffset + 5, 182, 40, 3, 3, 'FD'); 
+                doc.roundedRect(14, yBaseOffset + 5, 182, 45, 3, 3, 'FD'); 
                 
                 doc.setFontSize(10); doc.setTextColor(71, 85, 105); doc.setFont("helvetica", "bold");
-                doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("Hora:", 80, yBaseOffset + 12); doc.text("Operador:", 135, yBaseOffset + 12);
-                doc.text("Nivel Hallado:", 18, yBaseOffset + 19); doc.text("Nivel Post-Agot.:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
-                doc.text("Observación:", 18, yBaseOffset + 26);
+                doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("H. Inicio:", 80, yBaseOffset + 12); doc.text("H. Final:", 135, yBaseOffset + 12);
+                doc.text("Operador:", 18, yBaseOffset + 19); doc.text("Tiempo Ejec.:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
+                doc.text("Nivel Inicial C. Rejas:", 18, yBaseOffset + 26); doc.text("Nivel Final C. Rejas:", 80, yBaseOffset + 26); 
+                doc.text("Observación:", 18, yBaseOffset + 33);
                 
                 doc.setFont("helvetica", "normal"); doc.setTextColor(15, 23, 42); 
-                doc.text(reg.fecha || '-', 35, yBaseOffset + 12); doc.text(reg.hora || '-', 95, yBaseOffset + 12); doc.text(reg.operador || '-', 155, yBaseOffset + 12);
+                doc.text(reg.fecha || '-', 40, yBaseOffset + 12); doc.text(reg.hora || '-', 105, yBaseOffset + 12); doc.text(reg.hora_final || '-', 160, yBaseOffset + 12);
+                
+                doc.text(reg.operador || '-', 40, yBaseOffset + 19);
+                doc.setTextColor(37, 99, 235); doc.setFont("helvetica", "bold"); doc.text(reg.tiempo_ejecucion || '-', 105, yBaseOffset + 19);
                 
                 if(reg.lluvia > 15) { doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); }
+                else { doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "normal"); }
                 doc.text(`${reg.lluvia} mm`, 160, yBaseOffset + 19);
                 
                 if(reg.nivel_antes > 2.5) { doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); }
                 else { doc.setTextColor(37, 99, 235); doc.setFont("helvetica", "bold"); }
-                doc.text(`${reg.nivel_antes} m`, 45, yBaseOffset + 19);
+                doc.text(`${reg.nivel_antes} m`, 55, yBaseOffset + 26);
                 
-                doc.setTextColor(5, 150, 105); doc.text(`${reg.nivel_despues} m`, 110, yBaseOffset + 19);
+                doc.setTextColor(5, 150, 105); doc.setFont("helvetica", "bold"); doc.text(`${reg.nivel_despues} m`, 115, yBaseOffset + 26);
                 
                 doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "normal");
-                doc.text(doc.splitTextToSize(reg.observacion || '-', 135), 45, yBaseOffset + 26);
+                doc.text(doc.splitTextToSize(reg.observacion || '-', 140), 45, yBaseOffset + 33);
 
                 doc.setFont("helvetica", "bold");
-                doc.text(`Registro Inicial (${reg.fotos_antes.length} fotos)`, 105, yBaseOffset + 53, { align: "center" });
+                doc.text(`Registro Inicial (${reg.fotos_antes.length} fotos)`, 105, yBaseOffset + 58, { align: "center" });
                 const startX = 14; const imgW = 57; const imgH = 75; const gap = 5;
                 for(let j=0; j<Math.min(3, reg.fotos_antes.length); j++) {
                     const b64 = await obtenerImagenBase64Segura(reg.fotos_antes[j]);
-                    dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 58, imgW, imgH);
+                    dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 63, imgW, imgH);
                 }
 
-                doc.text(`Registro Final (${reg.fotos_despues.length} fotos)`, 105, yBaseOffset + 143, { align: "center" });
+                doc.text(`Registro Final (${reg.fotos_despues.length} fotos)`, 105, yBaseOffset + 148, { align: "center" });
                 for(let j=0; j<Math.min(3, reg.fotos_despues.length); j++) {
                     const b64 = await obtenerImagenBase64Segura(reg.fotos_despues[j]);
-                    dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 148, imgW, imgH);
+                    dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 153, imgW, imgH);
                 }
 
                 dibujarPieYEncabezado(doc, 1, 1, false);
@@ -910,7 +945,6 @@
                 doc.setFont("helvetica", "bold"); doc.text("Cód: AVAS-REP-PEAS-01", 105, 172, {align: 'center'});
                 doc.text("Rev: 1.2 | Nivel: Confidencial", 105, 178, {align: 'center'});
 
-                // Modificación: URL fija para el código QR
                 const qr = new QRious({ value: 'https://ialtavista.github.io/inspeccionDiariaPEASAuxiliarPeumayen/', size: 150 });
                 doc.addImage(qr.toDataURL(), 'PNG', 105 - 20, 210, 40, 40);
                 doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.text("Escanear para verificar datos en vivo", 105, 255, {align: 'center'});
@@ -923,16 +957,16 @@
                 doc.text("1. Registro Histórico de Inspecciones", 14, 30); 
 
                 const tableData = datosFiltrados.map(r => [
-                    r.fid, obtenerEstadoSemaforo(r.nivel_antes).texto, `${r.fecha} ${r.hora}`, r.operador, `${r.nivel_antes} -> ${r.nivel_despues}`, r.observacion
+                    r.fid, obtenerEstadoSemaforo(r.nivel_antes).texto, `${r.fecha}\n${r.hora} a ${r.hora_final}`, r.tiempo_ejecucion, r.operador, `${r.nivel_antes} -> ${r.nivel_despues}`, r.observacion
                 ]);
 
                 doc.autoTable({
                     startY: 38,
-                    head: [['FID', 'Estado', 'Fecha/Hora', 'Operador', 'Niveles (m)', 'Observación']],
+                    head: [['FID', 'Estado', 'Fecha/Hora', 'Tiempo', 'Operador', 'Niveles (m)', 'Observación']],
                     body: tableData,
                     theme: 'striped', headStyles: { fillColor: [30, 58, 138] },
                     styles: { fontSize: 7.5, font: 'helvetica' },
-                    columnStyles: { 1: { fontStyle: 'bold' }, 5: { cellWidth: 55 } },
+                    columnStyles: { 1: { fontStyle: 'bold' }, 6: { cellWidth: 45 } },
                     margin: { top: 30, bottom: 20 }
                 });
 
@@ -1083,41 +1117,46 @@
                     doc.setFontSize(9); doc.setTextColor(...estado.pdfText); doc.text(estado.texto, 180.5, yBaseOffset, { align: 'center' });
                     
                     doc.setFillColor(241, 245, 249); doc.setDrawColor(203, 213, 225);
-                    doc.roundedRect(14, yBaseOffset + 5, 182, 40, 3, 3, 'FD'); 
+                    doc.roundedRect(14, yBaseOffset + 5, 182, 45, 3, 3, 'FD'); 
                     
                     doc.setFontSize(10); doc.setTextColor(71, 85, 105); doc.setFont("helvetica", "bold");
-                    doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("Hora:", 80, yBaseOffset + 12); doc.text("Operador:", 135, yBaseOffset + 12);
-                    doc.text("Nivel Inicial en Cámara de Reja:", 18, yBaseOffset + 19); doc.text("Nivel Final en Cámara de Rejas:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
-                    doc.text("Observación:", 18, yBaseOffset + 26);
+                    doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("H. Inicio:", 80, yBaseOffset + 12); doc.text("H. Final:", 135, yBaseOffset + 12);
+                    doc.text("Operador:", 18, yBaseOffset + 19); doc.text("Tiempo Ejec.:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
+                    doc.text("Nivel Inicial C. Rejas:", 18, yBaseOffset + 26); doc.text("Nivel Final C. Rejas:", 80, yBaseOffset + 26); 
+                    doc.text("Observación:", 18, yBaseOffset + 33);
                     
                     doc.setFont("helvetica", "normal"); doc.setTextColor(15, 23, 42); 
-                    doc.text(reg.fecha || '-', 35, yBaseOffset + 12); doc.text(reg.hora || '-', 95, yBaseOffset + 12); doc.text(reg.operador || '-', 155, yBaseOffset + 12);
+                    doc.text(reg.fecha || '-', 40, yBaseOffset + 12); doc.text(reg.hora || '-', 105, yBaseOffset + 12); doc.text(reg.hora_final || '-', 160, yBaseOffset + 12);
+                    
+                    doc.text(reg.operador || '-', 40, yBaseOffset + 19);
+                    doc.setTextColor(37, 99, 235); doc.setFont("helvetica", "bold"); doc.text(reg.tiempo_ejecucion || '-', 105, yBaseOffset + 19);
                     
                     if(reg.lluvia > 15) { doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); }
+                    else { doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "normal"); }
                     doc.text(`${reg.lluvia} mm`, 160, yBaseOffset + 19);
                     
                     if(reg.nivel_antes > 2.5) { doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); }
                     else { doc.setTextColor(37, 99, 235); doc.setFont("helvetica", "bold"); }
-                    doc.text(`${reg.nivel_antes} m`, 45, yBaseOffset + 19);
+                    doc.text(`${reg.nivel_antes} m`, 55, yBaseOffset + 26);
                     
-                    doc.setTextColor(5, 150, 105); doc.text(`${reg.nivel_despues} m`, 110, yBaseOffset + 19);
+                    doc.setTextColor(5, 150, 105); doc.setFont("helvetica", "bold"); doc.text(`${reg.nivel_despues} m`, 115, yBaseOffset + 26);
                     
                     doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "normal");
-                    doc.text(doc.splitTextToSize(reg.observacion || '-', 135), 45, yBaseOffset + 26);
+                    doc.text(doc.splitTextToSize(reg.observacion || '-', 140), 45, yBaseOffset + 33);
 
                     doc.setFont("helvetica", "bold");
-                    doc.text(`Registro Inicial (${reg.fotos_antes.length} fotos)`, 105, yBaseOffset + 53, { align: "center" });
+                    doc.text(`Registro Inicial (${reg.fotos_antes.length} fotos)`, 105, yBaseOffset + 58, { align: "center" });
                     const startX = 14; const imgW = 57; const imgH = 75; const gap = 5;
                     
                     for(let j=0; j<Math.min(3, reg.fotos_antes.length); j++) {
                         const b64 = await obtenerImagenBase64Segura(reg.fotos_antes[j]);
-                        dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 58, imgW, imgH);
+                        dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 63, imgW, imgH);
                     }
 
-                    doc.text(`Registro Final (${reg.fotos_despues.length} fotos)`, 105, yBaseOffset + 143, { align: "center" });
+                    doc.text(`Registro Final (${reg.fotos_despues.length} fotos)`, 105, yBaseOffset + 148, { align: "center" });
                     for(let j=0; j<Math.min(3, reg.fotos_despues.length); j++) {
                         const b64 = await obtenerImagenBase64Segura(reg.fotos_despues[j]);
-                        dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 148, imgW, imgH);
+                        dibujarImagenConRatio(doc, b64, startX + j*(imgW+gap), yBaseOffset + 153, imgW, imgH);
                     }
                 }
 
