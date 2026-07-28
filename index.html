@@ -250,7 +250,7 @@
                                     <div class="flex items-center gap-1">Operador <span id="sort-operador" class="text-blue-500"></span></div>
                                 </th>
                                 <th class="p-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none" onclick="ordenarTabla('nivel')">
-                                    <div class="flex items-center gap-1">Nivel (m) <span id="sort-nivel" class="text-blue-500"></span></div>
+                                    <div class="flex items-center gap-1">Nivel Cámara de Rejas (m) <span id="sort-nivel" class="text-blue-500"></span></div>
                                 </th>
                                 <th class="p-3 w-full">Observación</th>
                             </tr>
@@ -681,8 +681,8 @@
                 data: {
                     datasets: [
                         { label: 'Precipitación (mm)', type: 'bar', data: dataLluvia, backgroundColor: 'rgba(56, 189, 248, 0.4)', borderColor: '#38bdf8', borderWidth: 1, yAxisID: 'yLluvia', barPercentage: 0.5, datalabels: { display: false } },
-                        { label: 'Nivel Hallado (m)', data: dataAntes, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, tension: 0.3, fill: true, pointBackgroundColor: '#1e40af', pointBorderColor: '#ffffff', pointRadius: 4, pointHoverRadius: 6, yAxisID: 'yNivel', datalabels: { display: true, align: 'top', offset: 4, color: isDark ? '#cbd5e1' : '#475569', font: { family: 'Inter', size: 9, weight: 'bold' }, formatter: function(v) { return 'FID ' + v.fid; } } },
-                        { label: 'Límite Pozo (3m)', data: dataLimite, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false, yAxisID: 'yNivel', datalabels: { display: false } }
+                        { label: 'Nivel Inicial en Cámara de Reja (m)', data: dataAntes, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, tension: 0.3, fill: true, pointBackgroundColor: '#1e40af', pointBorderColor: '#ffffff', pointRadius: 4, pointHoverRadius: 6, yAxisID: 'yNivel', datalabels: { display: true, align: 'top', offset: 4, color: isDark ? '#cbd5e1' : '#475569', font: { family: 'Inter', size: 9, weight: 'bold' }, formatter: function(v) { return 'FID ' + v.fid; } } },
+                        { label: 'Profundidad Cámara de Reja', data: dataLimite, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false, yAxisID: 'yNivel', datalabels: { display: false } }
                     ]
                 },
                 plugins: [ChartDataLabels, {
@@ -1042,8 +1042,8 @@
                     data: {
                         datasets: [
                             { label: 'Precipitación (mm)', type: 'bar', data: dataLluvia, backgroundColor: 'rgba(14, 165, 233, 0.4)', borderColor: '#0ea5e9', borderWidth: 3, yAxisID: 'yLluvia', barPercentage: 0.5 },
-                            { label: 'Nivel Hallado (m)', data: dataAntes, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 5, tension: 0.3, fill: true, pointBackgroundColor: '#1e40af', pointBorderColor: '#ffffff', pointRadius: 7, yAxisID: 'yNivel' },
-                            { label: 'Límite Pozo (3m)', data: dataLimite, borderColor: '#ef4444', borderWidth: 4, borderDash: [10, 10], pointRadius: 0, fill: false, yAxisID: 'yNivel' }
+                            { label: 'Nivel Inicial (m)', data: dataAntes, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 5, tension: 0.3, fill: true, pointBackgroundColor: '#1e40af', pointBorderColor: '#ffffff', pointRadius: 7, yAxisID: 'yNivel' },
+                            { label: 'Profundidad de Cámara de Rejas', data: dataLimite, borderColor: '#ef4444', borderWidth: 4, borderDash: [10, 10], pointRadius: 0, fill: false, yAxisID: 'yNivel' }
                         ]
                     },
                     options: {
@@ -1087,7 +1087,7 @@
                     
                     doc.setFontSize(10); doc.setTextColor(71, 85, 105); doc.setFont("helvetica", "bold");
                     doc.text("Fecha:", 18, yBaseOffset + 12); doc.text("Hora:", 80, yBaseOffset + 12); doc.text("Operador:", 135, yBaseOffset + 12);
-                    doc.text("Nivel Hallado:", 18, yBaseOffset + 19); doc.text("Nivel Post-Agot.:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
+                    doc.text("Nivel Inicial en Cámara de Reja:", 18, yBaseOffset + 19); doc.text("Nivel Final en Cámara de Rejas:", 80, yBaseOffset + 19); doc.text("Lluvia Caída:", 135, yBaseOffset + 19);
                     doc.text("Observación:", 18, yBaseOffset + 26);
                     
                     doc.setFont("helvetica", "normal"); doc.setTextColor(15, 23, 42); 
