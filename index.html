@@ -693,7 +693,7 @@
                 p1.setHours(p1.getHours() - 1); p2.setHours(p2.getHours() + 1);
                 dataLimite = [{x: p1, y: 3.0}, {x: p2, y: 3.0}];
             } else {
-                dataLimite = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
+                dataLimite = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 2.0 }));
             }
             const dataLluvia = datosCronologicos.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia })); 
 
@@ -719,7 +719,7 @@
                             const ctx = chart.canvas.getContext('2d');
                             const yAxis = chart.scales.yNivel;
                             const xAxis = chart.scales.x;
-                            const yPos = yAxis.getPixelForValue(3.0);
+                            const yPos = yAxis.getPixelForValue(2.0);
                             ctx.save(); ctx.beginPath();
                             ctx.moveTo(xAxis.left, yPos); ctx.lineTo(xAxis.right, yPos);
                             ctx.lineWidth = 2; ctx.strokeStyle = '#ef4444';
@@ -1062,7 +1062,7 @@
                 // GRÁFICO PRINCIPAL
                 const datosCronologicosGrafico = [...datosFiltrados].sort((a,b) => parseFechaHora(a.fecha, a.hora).getTime() - parseFechaHora(b.fecha, b.hora).getTime());
                 const dataAntes = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.nivel_antes }));
-                const dataLimite = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 3.0 }));
+                const dataLimite = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: 2.0 }));
                 const dataLluvia = datosCronologicosGrafico.map(r => ({ x: parseFechaHora(r.fecha, r.hora), y: r.lluvia }));
 
                 const tempCanvas = document.createElement('canvas');
@@ -1086,7 +1086,7 @@
                             const ctx = chart.canvas.getContext('2d');
                             const yAxis = chart.scales.yNivel;
                             const xAxis = chart.scales.x;
-                            const yPos = yAxis.getPixelForValue(3.0);
+                            const yPos = yAxis.getPixelForValue(2.0);
                             ctx.save(); ctx.beginPath();
                             ctx.moveTo(xAxis.left, yPos); ctx.lineTo(xAxis.right, yPos);
                             ctx.lineWidth = 4; ctx.strokeStyle = '#ef4444';
