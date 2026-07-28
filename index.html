@@ -113,7 +113,7 @@
         <section class="w-full lg:w-5/12 flex flex-col gap-4">
             
             <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
-                <label for="selectorFicha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Buscador Específico por FID / Fecha:</label>
+                <label for="selectorFicha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Buscador de Inspección por FID / Fecha:</label>
                 <div class="relative">
                     <select id="selectorFicha" onchange="cambiarFicha(this.value)" class="block w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none font-medium transition-colors">
                         <option value="">Cargando datos...</option>
@@ -265,7 +265,7 @@
             <div id="contenedorGrafico" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-[320px] transition-colors">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                    Evolución del nivel y precipitaciones
+                    Evolución del nivel en cámara de rejas y precipitación diaria
                 </h2>
                 <div class="relative flex-1 w-full min-h-[260px]">
                     <canvas id="graficoNiveles"></canvas>
@@ -811,7 +811,7 @@
             if (!esPortada) {
                 dibujarImagenConRatio(doc, cachedLogoBase64, 14, 8, 40, 15, 'left', true);
                 doc.setFontSize(8); doc.setTextColor(100); doc.setFont("helvetica", "normal");
-                doc.text("Cód: AVAS-REP-PEAS-01 | Rev: 0", 196, 12, { align: 'right' });
+                doc.text("Cód: AVAS-REP-PEAS-01 | Rev: 1.2", 196, 12, { align: 'right' });
             }
             const pageHeight = doc.internal.pageSize.height;
             doc.setDrawColor(200, 200, 200);
@@ -893,7 +893,9 @@
                 const fInicio = datosFiltrados[datosFiltrados.length - 1].fecha;
                 const fFin = datosFiltrados[0].fecha;
                 
-                // PORTADA
+                // ==========================================
+                // PORTADA (Página 1)
+                // ==========================================
                 dibujarImagenConRatio(doc, cachedLogoBase64, 105 - 35, 40, 70, 30, 'center', true);
                 doc.setFontSize(26); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
                 doc.text("Reporte de Inspección Diaria", 105, 90, { align: "center" });
@@ -906,12 +908,12 @@
                 doc.setDrawColor(200); doc.roundedRect(65, 160, 80, 25, 2, 2);
                 doc.setFontSize(9); doc.text("Documento Controlado", 105, 166, {align: 'center'});
                 doc.setFont("helvetica", "bold"); doc.text("Cód: AVAS-REP-PEAS-01", 105, 172, {align: 'center'});
-                doc.text("Rev: 0 | Nivel: Confidencial", 105, 178, {align: 'center'});
+                doc.text("Rev: 1.2 | Nivel: Confidencial", 105, 178, {align: 'center'});
 
-                const qr = new QRious({ value: window.location.href, size: 150 });
+                // Modificación: URL fija para el código QR
+                const qr = new QRious({ value: 'https://ialtavista.github.io/inspeccionDiariaPEASAuxiliarPeumayen/', size: 150 });
                 doc.addImage(qr.toDataURL(), 'PNG', 105 - 20, 210, 40, 40);
                 doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.text("Escanear para verificar datos en vivo", 105, 255, {align: 'center'});
-
                 doc.addPage();
                 
                 // REGISTRO HISTÓRICO
@@ -939,7 +941,7 @@
                 const paginaInicioGrafico = doc.internal.getNumberOfPages();
                 
                 doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont("helvetica", "bold");
-                doc.text("2. Evolución de Niveles y Precipitaciones", 14, 30);
+                doc.text("2. Evolución de Niveles en Cámara de Rejas y Precipitación Diaria", 14, 30);
 
                 let maxNivel = 0, totalLluvia = 0, countN = 0, countA = 0, countC = 0;
                 datosFiltrados.forEach(r => {
