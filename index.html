@@ -59,6 +59,40 @@
         <p class="text-slate-300 mt-2 text-base text-center max-w-md">Por favor, espera unos instantes.</p>
     </div>
 
+    <!-- Modal para Enviar Correo -->
+    <div id="emailModal" class="fixed inset-0 z-[115] hidden bg-slate-900 bg-opacity-80 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full max-w-md p-6 border border-slate-200 dark:border-slate-700">
+            <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Enviar Reporte por Correo
+            </h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Mapas de Correo Predefinidos:</label>
+                <select id="selPlantillaCorreo" onchange="cambiarPlantillaCorreo()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors">
+                    <!-- Opciones generadas automáticamente por JS -->
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Para (Principal):</label>
+                <input type="email" id="inpCorreoTo" placeholder="ejemplo@iavas.cl" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Con Copia (CC):</label>
+                <input type="email" id="inpCorreoCc" placeholder="copia@iavas.cl" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-colors">
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="cerrarModalCorreo()" class="px-4 py-2 rounded-lg font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors">Cancelar</button>
+                <button onclick="confirmarEnvioCorreo()" class="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-2">
+                    Enviar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Lightbox para Fotos -->
     <div id="lightboxModal" class="fixed inset-0 z-[110] hidden bg-black bg-opacity-90 flex items-center justify-center p-4 transition-opacity" onclick="closeLightbox()">
         <button class="absolute top-6 right-6 text-white hover:text-red-500 bg-gray-800 rounded-full p-2" onclick="closeLightbox()">
@@ -102,7 +136,7 @@
         </div>
         <div class="w-full md:w-auto flex flex-col sm:flex-row gap-2">
             <!-- BOTÓN ENVIAR POR CORREO -->
-            <button id="btnEnviarCorreo" onclick="descargarReporte('correo')" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
+            <button id="btnEnviarCorreo" onclick="abrirModalCorreo()" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 Enviar por Correo
             </button>
@@ -309,6 +343,49 @@
         let fotosActualesDespues = [];
 
         const { jsPDF } = window.jspdf;
+
+
+        // ==========================================
+        // CONFIGURACIÓN DE CORREOS Y MAPAS
+        // ==========================================
+        const MAPAS_CORREO = {
+            "Mandante": { to: "sebastian.henriquez@essbio.cl", cc: "alexy.concha@essbio.cl" },
+            "Envío Personalizado": { to: "", cc: "" }
+        };
+
+        function abrirModalCorreo() {
+            if (datosFiltrados.length === 0) return alert("No hay datos para enviar.");
+            
+            const select = document.getElementById('selPlantillaCorreo');
+            select.innerHTML = '';
+            for (const key in MAPAS_CORREO) {
+                const opt = document.createElement('option');
+                opt.value = key; opt.textContent = key;
+                select.appendChild(opt);
+            }
+            cambiarPlantillaCorreo(); 
+            document.getElementById('emailModal').classList.replace('hidden', 'flex');
+        }
+
+        function cerrarModalCorreo() {
+            document.getElementById('emailModal').classList.replace('flex', 'hidden');
+        }
+
+        function cambiarPlantillaCorreo() {
+            const key = document.getElementById('selPlantillaCorreo').value;
+            const config = MAPAS_CORREO[key];
+            document.getElementById('inpCorreoTo').value = config.to;
+            document.getElementById('inpCorreoCc').value = config.cc;
+        }
+
+        function confirmarEnvioCorreo() {
+            const to = document.getElementById('inpCorreoTo').value.trim();
+            const cc = document.getElementById('inpCorreoCc').value.trim();
+            if (!to) return alert("Debes ingresar al menos un correo principal (Para).");
+            
+            cerrarModalCorreo();
+            descargarReporte('correo', to, cc);
+        }
 
         window.onload = async () => {
             await obtenerDatos();
@@ -924,15 +1001,8 @@
             }
         }
 
-        async function descargarReporte(accion = 'descargar') {
+        async function descargarReporte(accion = 'descargar', emailTo = '', emailCc = '') {
             if (datosFiltrados.length === 0) return alert("No hay datos para reportar.");
-            
-            // Si es correo, pedimos a quién enviarlo (puedes dejar uno fijo si lo prefieres)
-            let destinatario = "";
-            if (accion === 'correo') {
-                destinatario = prompt("Ingresa el correo al que deseas enviar el reporte:", "gerencia@iavas.cl");
-                if (!destinatario) return; // Si el usuario cancela, detenemos todo
-            }
 
             toggleOverlay(true, "Compilando Reporte Maestro...");
 
@@ -1246,7 +1316,8 @@
                     const payload = {
                         pdfBase64: pdfBase64,
                         filename: nombreArchivo,
-                        emailDestino: destinatario
+                        emailDestino: emailTo,
+                        emailCC: emailCc
                     };
 
                     try {
@@ -1262,7 +1333,7 @@
                         toggleOverlay(false);
 
                         if (result.status === "success") {
-                            alert("¡Reporte enviado exitosamente por correo electrónico a " + destinatario + "!");
+                            alert("¡Reporte enviado exitosamente por correo electrónico a " + emailTo + "!");
                         } else {
                             alert("Hubo un problema al enviar: " + result.message);
                             console.error("Error del servidor Google:", result.message);
